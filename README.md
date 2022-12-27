@@ -22,7 +22,7 @@ python -c "import boto3
 import os
 from botocore.exceptions import ClientError
 ec2 = boto3.client('ec2')
-volume_info = ec2.describe_volumes
+volume_info = ec2.describe_volumes(
     Filters=[
         {
             'Name': 'attachment.instance-id',
