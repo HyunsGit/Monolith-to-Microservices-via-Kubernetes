@@ -56,9 +56,9 @@ sudo chmod +x /usr/local/bin/kubectl
 ```
 awscli 업데이트
 ```bash
-curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"<br />
-unzip awscliv2.zip<br />
-sudo ./aws/install<br />
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip awscliv2.zip
+sudo ./aws/install
 ```
 jq, envsubst, bash-completion 설치
 ```bash
@@ -194,6 +194,52 @@ STACK_NAME=$(eksctl get nodegroup --cluster eksworkshop-eksctl -o json | jq -r '
 ROLE_NAME=$(aws cloudformation describe-stack-resources --stack-name $STACK_NAME | jq -r '.StackResources[] | select(.ResourceType=="AWS::IAM::Role") | .PhysicalResourceId')
 echo "export ROLE_NAME=${ROLE_NAME}" | tee -a ~/.bash_profile
 ```
+
+# 쿠버네티스 클러스터의 작업공간 분리
+1. kubernetes frontend workload로 사용 할 namespace 생성
+```bash
+kubectl create ns frontend
+```
+2. kubernetes backend workload로 사용 할 namespace 생성
+```bash
+kubectl create ns backend
+```
+3. kubernetes frontend, backend ns 생성됬는지 조회
+```bash
+kubectl get ns --sort-by=.metadata.creationTimestamp | tac
+```
+![Screenshot 2022-12-28 at 9 54 26](https://user-images.githubusercontent.com/92728844/209741885-099dfd50-d13f-4a21-9568-8a825d5541e3.jpg)
+
+# namespace관련 추가적인 툴 설치
+1. krew 설치(cloud9 환경이 아닐 시 'git --version'을 통해 git이 설치되어있는지 확인)
+```bash
+(
+  set -x; cd "$(mktemp -d)" &&
+  OS="$(uname | tr '[:upper:]' '[:lower:]')" &&
+  ARCH="$(uname -m | sed -e 's/x86_64/amd64/' -e 's/\(arm\)\(64\)\?.*/\1\2/' -e 's/aarch64$/arm64/')" &&
+  KREW="krew-${OS}_${ARCH}" &&
+  curl -fsSLO "https://github.com/kubernetes-sigs/krew/releases/latest/download/${KREW}.tar.gz" &&
+  tar zxvf "${KREW}.tar.gz" &&
+  ./"${KREW}" install krew
+)
+```
+2. krew 디렉터리를 환경변수에 저장
+```bash
+export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"
+```
+3. krew의 ns기능 설치
+```bash
+kubectl krew install ns
+```
+![Screenshot 2022-12-28 at 10 11 52](https://user-images.githubusercontent.com/92728844/209742671-b829191f-3d3d-4d88-bc2a-507d912ddc89.png)
+
+4. ns사용방법(ns 앞에 작업하고 싶은 namespace명을 명시하고 ns 앞에 -를 붙여서 이전 namespace로 이동)
+```bash
+kubectl ns frontend
+kubectl ns -
+```
+![Screenshot 2022-12-28 at 10 28 52](https://user-images.githubusercontent.com/92728844/209743225-bd9b7b30-c881-4cc4-9bff-030929aa5d94.png)
+
 
 
 
