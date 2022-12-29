@@ -102,7 +102,7 @@ echo 'export LBC_CHART_VERSION="1.4.1"' >>  ~/.bash_profile<br />
 ![Screenshot 2022-12-27 at 15 27 18](https://user-images.githubusercontent.com/92728844/209621736-8e1491db-8db5-434c-ae9c-dc3bc7bb5068.png)
 
 
-# 워크스페이스에 대한 IAM 설정값 경
+# 워크스페이스에 대한 IAM 설정값 변경
 1. AWS가 관리하는 일시으로 부여하는 credential 삭제
 ```bash
 aws cloud9 update-environment  --environment-id $C9_PID --managed-credentials-action DISABLE
