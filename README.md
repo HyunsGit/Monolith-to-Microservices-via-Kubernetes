@@ -9,12 +9,16 @@ Underlying Infrastructure(AWS에서 사용 할 인프라)
 1. AWS Console로 접근 후 Cloud9 서비스 선택
 2. Create Environment 선택
 3. Cloud9 환경의 이름 지정(인스턴스명은 자유)
-4. 인스턴스 타입은 t3.micro 또는 t3.small로 지정 및 Create Environment 선택 후 Cloud9 환경 빌드
-5. Open 하이퍼링크 클릭
+4. Environment type은 'New EC2 instance'로 지정
+5. 인스턴스 타입은 t3.micro 또는 t3.small로 지정 및 Create Environment 선택 후 Cloud9 환경 빌드
+6. Platform은 Amazon Linux 2에 Timeout은 30minutes로 지정
+7. Connection은 SSM이 아닌 SSH로 변경
+8. VPC setting은 사전에 생성한 VPC 또는 Default VPC 사용
+9. Open 하이퍼링크 클릭
 ![Screenshot 2022-12-27 at 12 46 52](https://user-images.githubusercontent.com/92728844/209608225-eeacbf2c-919c-4a4c-9024-dacd1b00e90c.jpg)
 6. 아래와 같은 Cloud9 환경이 열리는 것을 확인
 ![Screenshot 2022-12-27 at 12 45 50](https://user-images.githubusercontent.com/92728844/209607888-fb783a07-c8e2-479b-ae00-9eeb6fb3a543.png)
-7. Cloud9에 추가 프로그램 설치를 위해 디스크 용량 증설
+7. Cloud9에 추가 프로그램 설치를 위해 EBS볼륨 용량 증설
 ```bash
 pip3 install --user --upgrade boto3
 export instance_id=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
@@ -66,8 +70,8 @@ sudo yum -y install jq gettext bash-completion moreutils
 ```
 yq 설치
 ```bash
-echo 'yq() {<br />
-  &ensp;docker run --rm -i -v "${PWD}":/workdir mikefarah/yq "$@"<br />
+echo 'yq() {
+  docker run --rm -i -v "${PWD}":/workdir mikefarah/yq "$@"
 }' | tee -a ~/.bashrc && source ~/.bashrc
 ```
 설치한 바이너리의 경로 및 실행 가능여부 확인
@@ -80,8 +84,8 @@ for command in kubectl jq envsubst aws
 
 AWS 로드밸런서 버전 지정
 ```bash
-echo 'export LBC_VERSION="v2.4.1"' >>  ~/.bash_profile <br />
-echo 'export LBC_CHART_VERSION="1.4.1"' >>  ~/.bash_profile<br />
+echo 'export LBC_VERSION="v2.4.1"' >>  ~/.bash_profile
+echo 'export LBC_CHART_VERSION="1.4.1"' >>  ~/.bash_profile
 .  ~/.bash_profile
 ```
 
@@ -128,7 +132,7 @@ aws configure get default.region
 ```
 5. IAM role(역할)이 유효한지 확인
 ```bash
-aws sts get-caller-identity --query Arn | grep eksworkshop-admin -q && echo "IAM role valid" || echo "IAM role NOT valid"
+aws sts get-caller-identity --query Arn | grep EKS-role -q && echo "IAM role valid" || echo "IAM role NOT valid"
 ```
 ```json
 만약 IAM role NOT valid가 뜬다면 '워크스페이스를 위한 IAM role(역할) 생성' 섹션으로 돌아가서 해당 단계부터 다시 진행
@@ -160,10 +164,10 @@ kind: ClusterConfig
 
 metadata:
   name: eksworkshop-eksctl
-  region: ap-northeast-2
+  region: ${AWS_REGION}
   version: "1.21"
 
-availabilityZones: ["ap-northeast-2a,ap-northeast-2b,ap-northeast-2c"]
+availabilityZones: ["${AZS[0]}", "${AZS[1]}", "${AZS[2]}"]
 
 managedNodeGroups:
 - name: nodegroup
