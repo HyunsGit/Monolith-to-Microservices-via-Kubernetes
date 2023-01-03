@@ -243,6 +243,201 @@ kubectl ns frontend
 kubectl ns -
 ```
 ![Screenshot 2022-12-28 at 10 28 52](https://user-images.githubusercontent.com/92728844/209743225-bd9b7b30-c881-4cc4-9bff-030929aa5d94.png)
+# Ingress를 통한 AWS Load balancer controller 만들기
+1. AWS Load Balancer 컨트롤러를 배포하기 전, 클러스터에 대한 IAM OIDC(OpenID Connect) identity Provider 생성
+```bash
+eksctl utils associate-iam-oidc-provide \
+    --region ${AWS_REGION} \
+    --cluster eksworkshop-eksctl
+    --approve
+```
+2. 클러스터의 OIDC provider URL을 해당 명령어로 확인
+```bash
+aws eks describe-cluster --name eksworkshop-eksctl --query "cluster.identity.oidc.issuer" --output text
+```
+3. 명령어 결과 나오는 값은 아래와 같은 형식임을 확인
+![Screenshot 2023-01-03 at 17 06 51](https://user-images.githubusercontent.com/92728844/210319706-7f4c3c1a-2cc6-41e8-b67f-0211f8c5e14b.png)
+4. 위의 결과 값에서 /id/ 뒤에 있는 값을 복사한 후, 아래의 명령어를 실행
+![Screenshot 2023-01-03 at 17 11 39](https://user-images.githubusercontent.com/92728844/210320137-24f3060e-2902-463f-91ba-47a9f157a564.png)
+```json
+결과 값이 출력되면 IAM OIDC identity provider가 클러스터에 생성이 된 상태이며, 아무 값도 나타나지 않으면 생성 작업을 수행
+```
+5. AWS Load Balancer Controller에 부여할 IAM Policy를 생성하는 작업을 수행
+```bash
+curl -o iam-policy.json https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/v2.4.4/docs/install/iam_policy.json
+aws iam create-policy \
+    --policy-name AWSLoadBalancerControllerIAMPolicy \
+    --policy-document file://iam-policy.json
+```
+6. AWS Load Balancer Controller를 위한 ServiceAccount를 생성
+```bash
+eksctl create iamserviceaccount \
+    --cluster eks-demo \
+    --namespace kube-system \
+    --name aws-load-balancer-controller \
+    --attach-policy-arn arn:aws:iam::$ACCOUNT_ID:policy/AWSLoadBalancerControllerIAMPolicy \
+    --override-existing-serviceaccounts \
+    --approve
+```
+# 클러스터에 컨트롤러 추가하기
+1. AWS Load Balancer controller를 클러스터에 추가하는 작업 수행
+```bash
+kubectl apply --validate=false -f https://github.com/jetstack/cert-manager/releases/download/v1.5.4/cert-manager.yaml
+```
+2. Load balancer controller yaml 파일을 다운로드
+```bash
+wget https://github.com/kubernetes-sigs/aws-load-balancer-controller/releases/download/v2.4.4/v2_4_4_full.yaml
+```
+3. yaml 파일에서 클러스터의 cluster-name을 편집
+```yaml
+spec:
+    containers:
+    - args:
+        - --cluster-name=eksworkshop-eksctl # 생성한 클러스터 이름을 입력
+        - --ingress-class=alb
+        image: amazon/aws-alb-ingress-controller:v2.4.4
+```
+![Screenshot 2023-01-03 at 17 24 08](https://user-images.githubusercontent.com/92728844/210321646-0cd05c2e-a45d-4bab-ad95-ba2e06ad5d8c.png)
+
+4. yaml 파일에서 ServiceAccount yaml spec을 삭제. AWS Load Balancer Controller를 위한 ServiceAccount를 이미 생성했기 때문에 아래 내용을 삭제 후 yaml 파일 저장
+```yaml
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/name: aws-load-balancer-controller
+  name: aws-load-balancer-controller
+  namespace: kube-system
+```
+5. AWS Load Balancer controller 파일을 배포
+```bash
+kubectl apply -f v2_4_4_full.yaml
+```
+6. 배포가 성공적으로 되고 컨트롤러가 실행되는지 아래의 명령어를 통해 확인. 결과 값이 도출되면 정상!
+```bash
+kubectl get deployment -n kube-system aws-load-balancer-controller
+```
+7. 아래의 명령어를 통해 service account가 생성됨을 확인
+```bash
+kubectl get sa aws-load-balancer-controller -n kube-system -o yaml
+```
+8. 속성 값을 파악
+```bash
+ALBPOD=$(kubectl get pod -n kube-system | egrep -o "aws-load-balancer[a-zA-Z0-9-]+")
+kubectl describe pod -n kube-system ${ALBPOD}
+```
+
+# frontend deployment 및 service 배포하기
+1. deployment.yaml 파일 확인
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: carflix-frontend
+  labels:
+    app: carflix-frontend
+  namespace: frontend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: carflix-frontend
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  minReadySeconds: 30
+  template:
+    metadata:
+      labels:
+        app: carflix-frontend
+    spec:
+      containers:
+      - image: public.ecr.aws/w3v4z9i9/carflix-prod:front.v3
+        imagePullPolicy: Always
+        name: carflix-frontend
+        ports:
+        - containerPort: 8110
+          protocol: TCP
+ ```
+ 2. deployment.yaml 파일을 사용해 deployment를 frontend namespace에 생성(pwd로 현재 경로 확인)
+ ```bash
+ kubectl apply -f ./frontend/frontend-deployment.yaml
+ ```
+ 3. frontend namespace에 frontend deployment가 생성됬는지 확인
+ ```bash
+ kubectl get deploy carflix-frontend -n frontend
+ kubectl get po -n frontend
+ ```
+ ![Screenshot 2023-01-03 at 11 08 10](https://user-images.githubusercontent.com/92728844/210291675-f214fd96-d046-4cba-89cc-b3704f679c68.png)
+ 
+ 4. frontend-service.yaml 파일 확인
+ ```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: carflix-frontend
+  namespace: frontend
+spec:
+  selector:
+    app: carflix-frontend
+  type: ClusterIP
+  ports:
+   -  name: https
+      protocol: TCP
+      port: 443
+      targetPort: 8110
+```
+ 5. frontend-service.yaml 파일을 사용해 service를 frontend namespace에 생성
+ ```bash
+ kubectl apply -f ./frontend/frontend-service.yaml
+ ```
+ 6. frontend namespace에 frontend service가 생성됬는지 확인
+ ```bash
+ kubectl get svc carflix-frontend -n frontend
+```
+![Screenshot 2023-01-03 at 11 13 02](https://user-images.githubusercontent.com/92728844/210292087-24cc8600-d9ad-48cd-97fd-e3406119835f.png)
+
+7. carflix-ingress-frontend 파일 확인
+```yaml
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: carflix-ingress-frontend
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/group.name: carflix-ingress
+  namespace: frontend
+spec:
+  rules:
+  - host: www.mdswebservices.com
+    http:
+      paths:
+        - pathType: Prefix
+          path: /
+          backend:
+            serviceName: carflix-frontend-internal
+            servicePort: 443
+```
+8. carflix-ingress-frontend.yaml 파일을 사용해 ingress를 frontend namespace에 생성
+```bash
+kubectl create -f carflix-ingress-frontend.yaml
+```
+9. frontend namespace에 frontend ingress가 생성됬는지 확인
+```bash
+kubectl get ingress -n frontend
+```
+![Screenshot 2023-01-03 at 17 38 41](https://user-images.githubusercontent.com/92728844/210323654-f67e9de8-8b65-401e-9ba2-1831253da572.jpg)
+
+10. 콘솔로 들어가 AWS ALB가 frontend ingress를 통해 생성됬는지 확인
+![Screenshot 2023-01-03 at 17 40 43](https://user-images.githubusercontent.com/92728844/210323919-ddea592b-49cd-4f88-848d-7af21fa96d4e.jpg)
+
+
 
 
 
