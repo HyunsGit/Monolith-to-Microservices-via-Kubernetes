@@ -14,11 +14,12 @@ Underlying Infrastructure(AWS에서 사용 할 인프라)
 6. Platform은 Amazon Linux 2에 Timeout은 30minutes로 지정
 7. Connection은 SSM이 아닌 SSH로 변경
 8. VPC setting은 사전에 생성한 VPC 또는 Default VPC 사용
-9. Open 하이퍼링크 클릭
+9. Create 클릭
+10. Open 하이퍼링크 클릭
 ![Screenshot 2022-12-27 at 12 46 52](https://user-images.githubusercontent.com/92728844/209608225-eeacbf2c-919c-4a4c-9024-dacd1b00e90c.jpg)
-6. 아래와 같은 Cloud9 환경이 열리는 것을 확인
+11. 아래와 같은 Cloud9 환경이 열리는 것을 확인
 ![Screenshot 2022-12-27 at 12 45 50](https://user-images.githubusercontent.com/92728844/209607888-fb783a07-c8e2-479b-ae00-9eeb6fb3a543.png)
-7. Cloud9에 추가 프로그램 설치를 위해 EBS볼륨 용량 증설
+12. Cloud9에 추가 프로그램 설치를 위해 EBS볼륨 용량 증설
 ```bash
 pip3 install --user --upgrade boto3
 export instance_id=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
@@ -214,6 +215,12 @@ kubectl get ns --sort-by=.metadata.creationTimestamp | tac
 ```
 ![Screenshot 2022-12-28 at 9 54 26](https://user-images.githubusercontent.com/92728844/209741885-099dfd50-d13f-4a21-9568-8a825d5541e3.jpg)
 
+4. Cloud9 환경에서 frontend 및 backend 디렉터리 생성
+```bash
+mkdir frontend
+mkdir backend
+```
+
 # namespace관련 추가적인 툴 설치
 1. krew 설치(cloud9 환경이 아닐 시 'git --version'을 통해 git이 설치되어있는지 확인)
 ```bash
@@ -246,9 +253,9 @@ kubectl ns -
 # Ingress를 통한 AWS Load balancer controller 만들기
 1. AWS Load Balancer 컨트롤러를 배포하기 전, 클러스터에 대한 IAM OIDC(OpenID Connect) identity Provider 생성
 ```bash
-eksctl utils associate-iam-oidc-provide \
+eksctl utils associate-iam-oidc-provider \
     --region ${AWS_REGION} \
-    --cluster eksworkshop-eksctl
+    --cluster eksworkshop-eksctl \
     --approve
 ```
 2. 클러스터의 OIDC provider URL을 해당 명령어로 확인
@@ -272,7 +279,7 @@ aws iam create-policy \
 6. AWS Load Balancer Controller를 위한 ServiceAccount를 생성
 ```bash
 eksctl create iamserviceaccount \
-    --cluster eks-demo \
+    --cluster eksworkshop-eksctl \
     --namespace kube-system \
     --name aws-load-balancer-controller \
     --attach-policy-arn arn:aws:iam::$ACCOUNT_ID:policy/AWSLoadBalancerControllerIAMPolicy \
@@ -329,9 +336,10 @@ ALBPOD=$(kubectl get pod -n kube-system | egrep -o "aws-load-balancer[a-zA-Z0-9-
 kubectl describe pod -n kube-system ${ALBPOD}
 ```
 
-# frontend deployment 및 service 배포하기
-1. deployment.yaml 파일 확인
+# frontend deployment, service 및 ingress 배포하기
+1. frontend-deployment.yaml 파일 확인
 ```yaml
+cat <<ZZZ> frontend-deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -362,6 +370,7 @@ spec:
         ports:
         - containerPort: 8110
           protocol: TCP
+ZZZ
  ```
  2. deployment.yaml 파일을 사용해 deployment를 frontend namespace에 생성(pwd로 현재 경로 확인)
  ```bash
@@ -376,10 +385,11 @@ spec:
  
  4. frontend-service.yaml 파일 확인
  ```yaml
+cat <<ZZZ> frontend-service.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: carflix-frontend
+  name: carflix-frontend-internal
   namespace: frontend
 spec:
   selector:
@@ -390,6 +400,7 @@ spec:
       protocol: TCP
       port: 443
       targetPort: 8110
+ZZZ
 ```
  5. frontend-service.yaml 파일을 사용해 service를 frontend namespace에 생성
  ```bash
@@ -403,6 +414,7 @@ spec:
 
 7. carflix-ingress-frontend 파일 확인
 ```yaml
+cat <<ZZZ> carflix-ingress-frontend.yaml
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
@@ -423,6 +435,7 @@ spec:
           backend:
             serviceName: carflix-frontend-internal
             servicePort: 443
+ZZZ
 ```
 8. carflix-ingress-frontend.yaml 파일을 사용해 ingress를 frontend namespace에 생성
 ```bash
@@ -436,6 +449,31 @@ kubectl get ingress -n frontend
 
 10. 콘솔로 들어가 AWS ALB가 frontend ingress를 통해 생성됬는지 확인
 ![Screenshot 2023-01-03 at 17 40 43](https://user-images.githubusercontent.com/92728844/210323919-ddea592b-49cd-4f88-848d-7af21fa96d4e.jpg)
+* View/edit rules 눌러서 세부규칙 확인
+![Screenshot 2023-01-04 at 9 18 29](https://user-images.githubusercontent.com/92728844/210462534-e4de53c3-3a3d-41a6-adf8-33492baf333a.jpg)
+* 타겟그룹 선택
+![Screenshot 2023-01-04 at 9 22 49](https://user-images.githubusercontent.com/92728844/210463026-2f1c36c7-1f52-4797-833e-8b70eb68001f.jpg)
+* frontend pod 3개가 정상적으로 할당되어있는 것을 확인
+![Screenshot 2023-01-04 at 9 20 51](https://user-images.githubusercontent.com/92728844/210462696-42e5552b-86ff-4139-9d74-a43ae9a86325.png)
+* 로드밸런서 주소로 접속 후 frontend 애플리케이션이 잘 보이는지 확인
+![Screenshot 2023-01-04 at 9 26 37](https://user-images.githubusercontent.com/92728844/210463330-92c390c4-a3ee-4bee-9cd9-d3dcc2f578be.jpg)
+```json
+* 로드밸런서는 80번 포트로 listener가 설정되어 있지만 쿠버네티스 내부 service가 443번 포트로 listener가 설정되어 있기 때문에 통신 오류가 발생
+* 해당 문제를 해결하기 위해 Load balancer의 target group 규칙을 수정(listener 80 -> 443으로 리다이렉트)
+```
+11. target group 수정하기
+![Screenshot 2023-01-04 at 10 02 20](https://user-images.githubusercontent.com/92728844/210465865-0d19cc38-15d9-4a89-8e2d-558919641503.jpg)
+![Screenshot 2023-01-04 at 10 05 17(1)](https://user-images.githubusercontent.com/92728844/210466813-50dcb8f3-9719-4f5d-b8cc-7e431ea8b017.jpg)
+![Screenshot 2023-01-04 at 10 16 01](https://user-images.githubusercontent.com/92728844/210467085-4a65e632-f5e6-45bc-a783-fefb68c9ddfc.jpg)
+![Screenshot 2023-01-04 at 10 19 01](https://user-images.githubusercontent.com/92728844/210467185-8b340450-47f3-4bfa-900e-c191126a99b6.jpg)
+![Screenshot 2023-01-04 at 10 20 28](https://user-images.githubusercontent.com/92728844/210467329-0e1441b0-63d8-42ac-a4e1-6effb6a102da.jpg)
+```json
+HTTP 80: default action 규칙이 아래와 같이 변경되어 있는지 확인(파란줄 부분 확인)
+```
+![Screenshot 2023-01-04 at 10 22 26(1)](https://user-images.githubusercontent.com/92728844/210472664-2f50b470-820b-47b4-93cc-ae5c5f670ef7.jpg)
+
+
+
 
 
 
