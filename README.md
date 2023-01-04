@@ -439,7 +439,7 @@ ZZZ
 ```
 8. carflix-ingress-frontend.yaml 파일을 사용해 ingress를 frontend namespace에 생성
 ```bash
-kubectl create -f carflix-ingress-frontend.yaml
+kubectl create -f ./frontend/carflix-ingress-frontend.yaml
 ```
 9. frontend namespace에 frontend ingress가 생성됬는지 확인
 ```bash
@@ -461,7 +461,7 @@ kubectl get ingress -n frontend
 * 로드밸런서는 80번 포트로 listener가 설정되어 있지만 쿠버네티스 내부 service가 443번 포트로 listener가 설정되어 있기 때문에 통신 오류가 발생
 * 해당 문제를 해결하기 위해 Load balancer의 target group 규칙을 수정(listener 80 -> 443으로 리다이렉트)
 ```
-11. target group 수정하기
+11. target group 수정하기(다하고 save changes)
 ![Screenshot 2023-01-04 at 10 02 20](https://user-images.githubusercontent.com/92728844/210465865-0d19cc38-15d9-4a89-8e2d-558919641503.jpg)
 ![Screenshot 2023-01-04 at 10 05 17(1)](https://user-images.githubusercontent.com/92728844/210466813-50dcb8f3-9719-4f5d-b8cc-7e431ea8b017.jpg)
 ![Screenshot 2023-01-04 at 10 16 01](https://user-images.githubusercontent.com/92728844/210467085-4a65e632-f5e6-45bc-a783-fefb68c9ddfc.jpg)
