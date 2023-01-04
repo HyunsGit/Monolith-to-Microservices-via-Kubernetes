@@ -468,9 +468,35 @@ kubectl get ingress -n frontend
 ![Screenshot 2023-01-04 at 10 19 01](https://user-images.githubusercontent.com/92728844/210467185-8b340450-47f3-4bfa-900e-c191126a99b6.jpg)
 ![Screenshot 2023-01-04 at 10 20 28](https://user-images.githubusercontent.com/92728844/210467329-0e1441b0-63d8-42ac-a4e1-6effb6a102da.jpg)
 ```json
+* EC2 -> Load Balancer -> Load Balancer 선택 -> Listener 탭 선택 -> View/Edit rules
 HTTP 80: default action 규칙이 아래와 같이 변경되어 있는지 확인(파란줄 부분 확인)
 ```
 ![Screenshot 2023-01-04 at 10 22 26(1)](https://user-images.githubusercontent.com/92728844/210472664-2f50b470-820b-47b4-93cc-ae5c5f670ef7.jpg)
+# 로드밸런서의 HTTPS 통신을 위해 SSL TLS 인증서 만들기
+![Screenshot 2023-01-04 at 15 26 38](https://user-images.githubusercontent.com/92728844/210496875-30fda187-a5e4-4f1b-a70a-13ffe74ba4d8.jpg)
+![Screenshot 2023-01-04 at 15 45 57](https://user-images.githubusercontent.com/92728844/210499183-2740b988-cdef-466b-9103-31e07f021251.jpg)
+![Screenshot 2023-01-04 at 15 48 39](https://user-images.githubusercontent.com/92728844/210499502-3422453e-e01b-4b5b-b9c2-8131979e812c.jpg)
+![Screenshot 2023-01-04 at 15 50 25](https://user-images.githubusercontent.com/92728844/210499643-a20c0467-2273-4641-9dd4-cb0a7c9cf533.jpg)
+![Screenshot 2023-01-04 at 15 51 38](https://user-images.githubusercontent.com/92728844/210499890-6217ffa6-1674-4262-b755-0aaeba1a0b15.jpg)
+![Screenshot 2023-01-04 at 15 52 57](https://user-images.githubusercontent.com/92728844/210500018-4122a9f8-e4d6-474e-b612-c2690bc9a307.jpg)
+![Screenshot 2023-01-04 at 15 53 59](https://user-images.githubusercontent.com/92728844/210500144-0cf7e9d9-6e9b-4868-b86e-188db052aea7.jpg)
+![Screenshot 2023-01-04 at 15 56 46](https://user-images.githubusercontent.com/92728844/210500722-02369709-19d4-4a8e-ba0e-6d8d4bf73807.jpg)
+![Screenshot 2023-01-04 at 15 59 25](https://user-images.githubusercontent.com/92728844/210500959-99793cd2-932c-439e-93e5-b7be40361564.jpg)
+![Screenshot 2023-01-04 at 16 01 02](https://user-images.githubusercontent.com/92728844/210501263-8856feb0-f3f6-4f30-a391-7d8a2f94b7c2.jpg)
+![Screenshot 2023-01-04 at 16 03 35](https://user-images.githubusercontent.com/92728844/210501783-8f1b6e54-1f9f-48ae-bee9-4ff54403a910.jpg)
+![Screenshot 2023-01-04 at 16 12 04](https://user-images.githubusercontent.com/92728844/210502636-9d241184-808c-4d41-b42c-b9a0d9ff41c7.jpg)
+![Screenshot 2023-01-04 at 16 15 05](https://user-images.githubusercontent.com/92728844/210503279-d36294e2-e270-4600-8073-9e897af8b9cc.jpg)
+![Screenshot 2023-01-04 at 16 15 26](https://user-images.githubusercontent.com/92728844/210503300-84f16d65-1e74-4d85-9f3b-79d7b2aff073.jpg)
+![Screenshot 2023-01-04 at 16 15 39](https://user-images.githubusercontent.com/92728844/210503308-84e2bab1-f024-4a5f-bd67-b32bcb8bd214.jpg)
+![Screenshot 2023-01-04 at 16 18 45](https://user-images.githubusercontent.com/92728844/210504689-a7e1b3d8-2c7f-4c91-9cb1-75ffec5278df.jpg)
+![Screenshot 2023-01-04 at 16 18 55](https://user-images.githubusercontent.com/92728844/210504707-7a7ae502-b244-4f66-ae99-842d4486d287.jpg)
+![Screenshot 2023-01-04 at 16 21 56](https://user-images.githubusercontent.com/92728844/210504723-e6080057-b6ad-4d1f-bafb-938aaa8a0496.jpg)
+![Screenshot 2023-01-04 at 16 22 55](https://user-images.githubusercontent.com/92728844/210504741-aa071703-8110-4ec0-8f7e-de0bcbfe3832.jpg)
+![Screenshot 2023-01-04 at 16 24 21](https://user-images.githubusercontent.com/92728844/210504754-d002e039-d096-490a-adde-4bed26d9ad53.png)
+![Screenshot 2023-01-04 at 16 26 26](https://user-images.githubusercontent.com/92728844/210504774-79af7813-e938-44ab-a717-e2f678e9a588.jpg)
+![Screenshot 2023-01-04 at 16 29 22](https://user-images.githubusercontent.com/92728844/210505061-13f037b9-22f0-4d16-a047-4a4d7ef5de49.jpg)
+
+
 
 
 
