@@ -372,7 +372,7 @@ spec:
           protocol: TCP
 ZZZ
  ```
- 2. deployment.yaml 파일을 사용해 deployment를 frontend namespace에 생성(pwd로 현재 경로 확인)
+ 2. frontend-deployment.yaml 파일을 사용해 deployment를 frontend namespace에 생성(pwd로 현재 경로 확인)
  ```bash
  kubectl apply -f ./frontend/frontend-deployment.yaml
  ```
