@@ -336,8 +336,8 @@ ALBPOD=$(kubectl get pod -n kube-system | egrep -o "aws-load-balancer[a-zA-Z0-9-
 kubectl describe pod -n kube-system ${ALBPOD}
 ```
 
-# frontend deployment, service 및 ingress 배포하기
-1. frontend-deployment.yaml 파일 확인
+# frontend-deployment, service 및 ingress 배포하기
+1. frontend-deployment.yaml 파일 확인 및 frontend-deployment.yaml frontend 디렉터리로 이동
 ```yaml
 cat <<ZZZ> frontend-deployment.yaml
 apiVersion: apps/v1
@@ -372,6 +372,9 @@ spec:
           protocol: TCP
 ZZZ
  ```
+```bash
+mv frontend-deployment.yaml ./frontend/frontend-deployment.yaml
+```
  2. frontend-deployment.yaml 파일을 사용해 deployment를 frontend namespace에 생성(pwd로 현재 경로 확인)
  ```bash
  kubectl apply -f ./frontend/frontend-deployment.yaml
@@ -383,7 +386,7 @@ ZZZ
  ```
  ![Screenshot 2023-01-03 at 11 08 10](https://user-images.githubusercontent.com/92728844/210291675-f214fd96-d046-4cba-89cc-b3704f679c68.png)
  
- 4. frontend-service.yaml 파일 확인
+ 4. frontend-service.yaml 파일 확인 및 frontend-service.yaml 파일 frontend 디렉터리로 이동
  ```yaml
 cat <<ZZZ> frontend-service.yaml
 apiVersion: v1
@@ -402,6 +405,9 @@ spec:
       targetPort: 8110
 ZZZ
 ```
+```bash
+mv frontend-service.yaml ./frontend/frontend-service.yaml
+```
  5. frontend-service.yaml 파일을 사용해 service를 frontend namespace에 생성
  ```bash
  kubectl apply -f ./frontend/frontend-service.yaml
@@ -412,7 +418,7 @@ ZZZ
 ```
 ![Screenshot 2023-01-03 at 11 13 02](https://user-images.githubusercontent.com/92728844/210292087-24cc8600-d9ad-48cd-97fd-e3406119835f.png)
 
-7. carflix-ingress-frontend 파일 확인
+7. carflix-ingress-frontend 파일 확인 및 carflix-ingress-frontend 파일을 frontend 디렉터리로 이동
 ```yaml
 cat <<ZZZ> carflix-ingress-frontend.yaml
 apiVersion: extensions/v1beta1
@@ -436,6 +442,9 @@ spec:
             serviceName: carflix-frontend-internal
             servicePort: 443
 ZZZ
+```
+```bash
+mv carflix-ingress-frontend.yaml ./frontend/carflix-ingress-frontend.yaml
 ```
 8. carflix-ingress-frontend.yaml 파일을 사용해 ingress를 frontend namespace에 생성
 ```bash
@@ -526,6 +535,126 @@ Alias to Application and Classica Load Balancer -> ap-northeast-2 -> 알맞는 L
 ![Screenshot 2023-01-04 at 16 29 22](https://user-images.githubusercontent.com/92728844/210505061-13f037b9-22f0-4d16-a047-4a4d7ef5de49.jpg)
 23. 애플리케이션이 HTTPS로 정상적으로 동작하는지 확인
 ![Screenshot 2023-01-04 at 16 32 00](https://user-images.githubusercontent.com/92728844/210673442-352fc172-1982-408e-b082-9e97979f6c00.jpg)
+
+# backend-deployment, service 및 ingress 배포하기
+1. backend-deployment.yaml 파일 확인 및 backend-deployment.yaml 파일을 backend 디렉터리로 이동
+```yaml
+cat <<ZZZ> backend-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: carflix-backend
+  labels:
+    app: carflix-backend
+  namespace: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: carflix-backend
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  minReadySeconds: 30
+  template:
+    metadata:
+      labels:
+        app: carflix-backend
+    spec:
+      containers:
+      - image: public.ecr.aws/w3v4z9i9/carflix-prod:api.3
+        name: carflix-backend
+        ports:
+        - containerPort: 8082
+          protocol: TCP
+ZZZ
+ ```
+```bash
+mv backend-deployment.yaml ./backend/backend-deployment.yaml
+```
+ 2. backend-deployment.yaml 파일을 사용해 deployment를 backend namespace에 생성(pwd로 현재 경로 확인)
+ ```bash
+ kubectl apply -f ./backend/backend-deployment.yaml
+ ```
+ 3. backend namespace에 backend deployment가 생성됬는지 확인
+ ```bash
+ kubectl get deploy carflix-backend -n backend
+ kubectl get po -n backend
+ ```
+![Screenshot 2023-01-05 at 9 34 35](https://user-images.githubusercontent.com/92728844/210675666-9b83f159-93e1-4f58-8169-6b21f0c38469.png)
+
+ 4. backend-service.yaml 파일 확인 및 backend-service.yaml 파일을 backend 디렉터리로 이동
+ ```yaml
+cat <<ZZZ> backend-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: carflix-backend-internal
+  namespace: backend
+spec:
+  selector:
+    app: carflix-backend
+  type: ClusterIP
+  ports:
+   -  name: https
+      protocol: TCP
+      port: 443
+      targetPort: 8082
+ZZZ
+```
+```bash
+mv backend-service.yaml ./backend/backend-service.yaml
+```
+ 5. backend-service.yaml 파일을 사용해 service를 backend namespace에 생성
+ ```bash
+ kubectl apply -f ./backend/backend-service.yaml
+ ```
+ 6. backend namespace에 backend service가 생성됬는지 확인
+ ```bash
+ kubectl get svc carflix-backend -n backend
+```
+![Screenshot 2023-01-05 at 9 39 08](https://user-images.githubusercontent.com/92728844/210676069-3050aefc-6ca0-4f48-a48f-aedbb7e83fd5.png)
+
+7. carflix-ingress-backend 파일 확인 및 carflix-ingress-backend 파일을 backend 디렉터리로 이동
+```yaml
+cat <<ZZZ> carflix-ingress-backend.yaml
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: carflix-ingress-backend
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/group.name: carflix-ingress
+  namespace: backend
+spec:
+  rules:
+  - host: api.mdswebservices.com
+    http:
+      paths:
+        - pathType: Prefix
+          path: /
+          backend:
+            serviceName: carflix-backend-internal
+            servicePort: 443
+             
+ZZZ
+```
+```bash
+mv carflix-ingress-backend.yaml ./backend/carflix-ingress-backend.yaml
+```
+8. carflix-ingress-backend.yaml 파일을 사용해 ingress를 backend namespace에 생성
+```bash
+kubectl create -f ./backend/carflix-ingress-backend.yaml
+```
+9. backend namespace에 backend ingress가 생성됬는지 확인
+```bash
+kubectl get ingress -n backend
+```
+![Screenshot 2023-01-05 at 9 50 34](https://user-images.githubusercontent.com/92728844/210677210-29b63efc-3a60-406f-b014-20eb2c78b602.png)
 
 
 
