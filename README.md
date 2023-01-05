@@ -656,6 +656,25 @@ kubectl get ingress -n backend
 ```
 ![Screenshot 2023-01-05 at 9 50 34](https://user-images.githubusercontent.com/92728844/210677210-29b63efc-3a60-406f-b014-20eb2c78b602.png)
 
+10. 콘솔로 들어가 AWS ALB에 backend ingress가 target group에 추가됬는지 확인
+![Screenshot 2023-01-05 at 10 17 22](https://user-images.githubusercontent.com/92728844/210680131-c7fbe003-134f-4b7f-9f8e-f3ebe0234607.jpg)
+11. api.mdswebservices DNS 주소 앞으로 backend target group이 생성된 것을 확인
+![Screenshot 2023-01-05 at 10 20 45](https://user-images.githubusercontent.com/92728844/210680367-40d20424-8e46-4c4f-b4f9-ce3cdac2d9ce.jpg)
+12. 해당 target group을 https 규칙의 target group에 추가
+![Screenshot 2023-01-05 at 10 23 13](https://user-images.githubusercontent.com/92728844/210681948-57395168-b67f-4837-b962-0d4ca3719c71.jpg)
+13. https 규칙에 규칙 추가
+![Screenshot 2023-01-05 at 10 38 10](https://user-images.githubusercontent.com/92728844/210682341-8ce3d0b4-4463-457f-b875-1a831d04452c.jpg)
+14. frontend target group 규칙 추가
+![Screenshot 2023-01-05 at 10 41 51](https://user-images.githubusercontent.com/92728844/210682607-b1769291-08ee-4bc8-93b0-e5f121ae5aa6.jpg)
+15. 규칙 순서 변경 
+![Screenshot 2023-01-05 at 10 43 32](https://user-images.githubusercontent.com/92728844/210682740-5b4a32ce-4fc2-4154-b9f8-c34de772f3d2.jpg)
+16. backend target group 규칙 추가
+![Screenshot 2023-01-05 at 10 45 30](https://user-images.githubusercontent.com/92728844/210682907-a0e56284-5870-4b4b-8a9b-8d83793ae7d6.jpg)
+17. 규칙이 잘 적용됬는지 확인
+![Screenshot 2023-01-05 at 10 46 40](https://user-images.githubusercontent.com/92728844/210683052-dbab9374-8328-4058-a53f-5eee26c8b353.png)
+# frontend 및 backend 서비스가 통신되서 웹앱이 잘 동작하는지 확인
+
+
 
 
 
