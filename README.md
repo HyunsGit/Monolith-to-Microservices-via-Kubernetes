@@ -461,11 +461,15 @@ kubectl get ingress -n frontend
 * 로드밸런서는 80번 포트로 listener가 설정되어 있지만 쿠버네티스 내부 service가 443번 포트로 listener가 설정되어 있기 때문에 통신 오류가 발생
 * 해당 문제를 해결하기 위해 Load balancer의 target group 규칙을 수정(listener 80 -> 443으로 리다이렉트)
 ```
-11. target group 수정하기(다하고 save changes)
+11. target group 수정
 ![Screenshot 2023-01-04 at 10 02 20](https://user-images.githubusercontent.com/92728844/210465865-0d19cc38-15d9-4a89-8e2d-558919641503.jpg)
+* Edit 버튼 클릭
 ![Screenshot 2023-01-04 at 10 05 17(1)](https://user-images.githubusercontent.com/92728844/210466813-50dcb8f3-9719-4f5d-b8cc-7e431ea8b017.jpg)
+* 기존 Default actions 'Return fixed response' 삭제(Remove)
 ![Screenshot 2023-01-04 at 10 16 01](https://user-images.githubusercontent.com/92728844/210467085-4a65e632-f5e6-45bc-a783-fefb68c9ddfc.jpg)
+* Default actions에서 Add action -> Redirect 선택
 ![Screenshot 2023-01-04 at 10 19 01](https://user-images.githubusercontent.com/92728844/210467185-8b340450-47f3-4bfa-900e-c191126a99b6.jpg)
+* Protocol은 HTTPS, Port는 443, 그리고 Custom host, path, query 선택 후 Host, Path, Query 값은 기본값 유지. Status code는 301 
 ![Screenshot 2023-01-04 at 10 20 28](https://user-images.githubusercontent.com/92728844/210467329-0e1441b0-63d8-42ac-a4e1-6effb6a102da.jpg)
 ```json
 * EC2 -> Load Balancer -> Load Balancer 선택 -> Listener 탭 선택 -> View/Edit rules
@@ -473,28 +477,56 @@ HTTP 80: default action 규칙이 아래와 같이 변경되어 있는지 확인
 ```
 ![Screenshot 2023-01-04 at 10 22 26(1)](https://user-images.githubusercontent.com/92728844/210472664-2f50b470-820b-47b4-93cc-ae5c5f670ef7.jpg)
 # 로드밸런서의 HTTPS 통신을 위해 SSL TLS 인증서 만들기
+1. AWS Console에서 Certificate Manager(ACM) 검색 -> List certificates -> Request 
 ![Screenshot 2023-01-04 at 15 26 38](https://user-images.githubusercontent.com/92728844/210496875-30fda187-a5e4-4f1b-a70a-13ffe74ba4d8.jpg)
+2. Request a public certificate -> Next 
 ![Screenshot 2023-01-04 at 15 45 57](https://user-images.githubusercontent.com/92728844/210499183-2740b988-cdef-466b-9103-31e07f021251.jpg)
+3. Fully qualified domain name(FQDN)애 사용할 도메인 주소 입력(여러 개의 DNS주소를 사용할 경우 sub domain에 * 사용 권장) <br />
+Validation Method는 DNS validation 사용
 ![Screenshot 2023-01-04 at 15 48 39](https://user-images.githubusercontent.com/92728844/210499502-3422453e-e01b-4b5b-b9c2-8131979e812c.jpg)
+4. Key algorithm은 RSA 2048 사용 -> Request
 ![Screenshot 2023-01-04 at 15 50 25](https://user-images.githubusercontent.com/92728844/210499643-a20c0467-2273-4641-9dd4-cb0a7c9cf533.jpg)
+5. List certificates -> Certificate ID 선택
 ![Screenshot 2023-01-04 at 15 51 38](https://user-images.githubusercontent.com/92728844/210499890-6217ffa6-1674-4262-b755-0aaeba1a0b15.jpg)
+6. Create records in Route 53 선택
 ![Screenshot 2023-01-04 at 15 52 57](https://user-images.githubusercontent.com/92728844/210500018-4122a9f8-e4d6-474e-b612-c2690bc9a307.jpg)
+7. Record 선택 후 Create records
 ![Screenshot 2023-01-04 at 15 53 59](https://user-images.githubusercontent.com/92728844/210500144-0cf7e9d9-6e9b-4868-b86e-188db052aea7.jpg)
+8. AWS Console에서 Route 53 검색 -> Dashboard -> Hosted zone
 ![Screenshot 2023-01-04 at 15 56 46](https://user-images.githubusercontent.com/92728844/210500722-02369709-19d4-4a8e-ba0e-6d8d4bf73807.jpg)
+9. 구매한 DNS 주소 선택(외부 DNS 호스팅 업체 사용 시 Route 53으로 DNS 서비스 이전)
 ![Screenshot 2023-01-04 at 15 59 25](https://user-images.githubusercontent.com/92728844/210500959-99793cd2-932c-439e-93e5-b7be40361564.jpg)
+10. 새로운 CNAME 레코드가 생성된 것을 확인
 ![Screenshot 2023-01-04 at 16 01 02](https://user-images.githubusercontent.com/92728844/210501263-8856feb0-f3f6-4f30-a391-7d8a2f94b7c2.jpg)
+11. 다시 ACM으로 돌아와서 Certificate의 Status가 Pending에서 Issued로 변경된 것을 확인 
 ![Screenshot 2023-01-04 at 16 03 35](https://user-images.githubusercontent.com/92728844/210501783-8f1b6e54-1f9f-48ae-bee9-4ff54403a910.jpg)
+12. AWS Console에서 EC2 검색 -> 왼쪽 선택 메뉴에서 Load Balancing -> Load Balancers 선택 -> 생성된 Load Balancer 선택 후 Listener 탭으로 이동 -> Add Listener
 ![Screenshot 2023-01-04 at 16 12 04](https://user-images.githubusercontent.com/92728844/210502636-9d241184-808c-4d41-b42c-b9a0d9ff41c7.jpg)
+13. Protocol은 HTTPS, Port는 443, Default actions는 Forward to 선택 후 Target group은 기존 frontend target group으로 지정
 ![Screenshot 2023-01-04 at 16 15 05](https://user-images.githubusercontent.com/92728844/210503279-d36294e2-e270-4600-8073-9e897af8b9cc.jpg)
+14-1. 엔드유저 세션 유지를 위해 Enable group-level stickiness 체크 후 Stickiness duration은 3 hours로 지정
+14-2. Secure policy는 'ELBSecurityPolicy-2016-08' 선택 후 Default SSL/TLS certificate은 'From ACM' 선택 및 발급 받은 인증서 선택
 ![Screenshot 2023-01-04 at 16 15 26](https://user-images.githubusercontent.com/92728844/210503300-84f16d65-1e74-4d85-9f3b-79d7b2aff073.jpg)
+15. Add 선택
 ![Screenshot 2023-01-04 at 16 15 39](https://user-images.githubusercontent.com/92728844/210503308-84e2bab1-f024-4a5f-bd67-b32bcb8bd214.jpg)
+16. HTTPS로 리다이렉션하는 규칙을 만들었지만 Security Group에 443 포트가 오픈이 안되어있어 주황색 경고가 떠있는 것을 확인
 ![Screenshot 2023-01-04 at 16 18 45](https://user-images.githubusercontent.com/92728844/210504689-a7e1b3d8-2c7f-4c91-9cb1-75ffec5278df.jpg)
+17. 주황색 경고 아이콘 클릭 후 로드밸런서명과 일치하는 Security Group 선택
 ![Screenshot 2023-01-04 at 16 18 55](https://user-images.githubusercontent.com/92728844/210504707-7a7ae502-b244-4f66-ae99-842d4486d287.jpg)
+18. Security Group 선택 후 Edit inbound rules 선택
 ![Screenshot 2023-01-04 at 16 21 56](https://user-images.githubusercontent.com/92728844/210504723-e6080057-b6ad-4d1f-bafb-938aaa8a0496.jpg)
+19. Add rule -> Type은 HTTPS -> Source는 Custom으로 지정 후 돋보기 칸에 0.0.0.0/0으로 지정 -> Save rules
 ![Screenshot 2023-01-04 at 16 22 55](https://user-images.githubusercontent.com/92728844/210504741-aa071703-8110-4ec0-8f7e-de0bcbfe3832.jpg)
+20. AWS Console에서 Route 53 검색 -> Hosted zones -> Create record
 ![Screenshot 2023-01-04 at 16 24 21](https://user-images.githubusercontent.com/92728844/210504754-d002e039-d096-490a-adde-4bed26d9ad53.png)
+21. Record name에 www 또는 원하는 sub domain 지정 -> Record type은 A 레코드 -> Alias 활성화 -> <br />
+Alias to Application and Classica Load Balancer -> ap-northeast-2 -> 알맞는 Load Balancer명 선택 -> Create records
 ![Screenshot 2023-01-04 at 16 26 26](https://user-images.githubusercontent.com/92728844/210504774-79af7813-e938-44ab-a717-e2f678e9a588.jpg)
+22. 생성한 A 레코드가 정상적으로 등록됬는지 확인
 ![Screenshot 2023-01-04 at 16 29 22](https://user-images.githubusercontent.com/92728844/210505061-13f037b9-22f0-4d16-a047-4a4d7ef5de49.jpg)
+23. 애플리케이션이 HTTPS로 정상적으로 동작하는지 확인
+![Screenshot 2023-01-04 at 16 32 00](https://user-images.githubusercontent.com/92728844/210673442-352fc172-1982-408e-b082-9e97979f6c00.jpg)
+
 
 
 
