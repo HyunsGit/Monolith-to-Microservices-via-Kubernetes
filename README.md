@@ -672,7 +672,9 @@ kubectl get ingress -n backend
 ![Screenshot 2023-01-05 at 10 45 30](https://user-images.githubusercontent.com/92728844/210682907-a0e56284-5870-4b4b-8a9b-8d83793ae7d6.jpg)
 17. 규칙이 잘 적용됬는지 확인
 ![Screenshot 2023-01-05 at 10 46 40](https://user-images.githubusercontent.com/92728844/210683052-dbab9374-8328-4058-a53f-5eee26c8b353.png)
-# frontend 및 backend 서비스가 통신되서 웹앱이 잘 동작하는지 확인
+# frontend 및 backend 서비스가 통신되서 웹앱이 잘 동작하는지 확인<br />(팝업 뜨면 API 연동 성공!)
+<img width="1437" alt="Screenshot 2023-01-06 at 14 11 05" src="https://user-images.githubusercontent.com/92728844/210934557-8443d54c-43b2-4a13-a1e6-c29d0e9190df.png">
+
 
 
 
