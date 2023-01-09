@@ -675,6 +675,9 @@ kubectl get ingress -n backend
 # frontend 및 backend 서비스가 통신되서 웹앱이 잘 동작하는지 확인<br />(팝업 뜨면 API 연동 성공!)
 <img width="1437" alt="Screenshot 2023-01-06 at 14 11 05" src="https://user-images.githubusercontent.com/92728844/210934557-8443d54c-43b2-4a13-a1e6-c29d0e9190df.png">
 
+# EKS에 Karpenter 설치해보기
+
+
 
 
 
