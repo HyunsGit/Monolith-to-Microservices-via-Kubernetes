@@ -133,7 +133,7 @@ aws configure get default.region
 ```
 5. IAM role(역할)이 유효한지 확인
 ```bash
-aws sts get-caller-identity --query Arn | grep EKS-role -q && echo "IAM role valid" || echo "IAM role NOT valid"
+aws sts get-caller-identity --query Arn | grep sample-role # ec2에 추가한 iam role 이름 -q && echo "IAM role valid" || echo "IAM role NOT valid"
 ```
 ```json
 만약 IAM role NOT valid가 뜬다면 '워크스페이스를 위한 IAM role(역할) 생성' 섹션으로 돌아가서 해당 단계부터 다시 진행
@@ -159,14 +159,14 @@ eksctl completion bash >> ~/.bash_completion
 # eksctl을 사용해 eks클러스터 생성
 1. eks클러스터 배포를 위한 yaml파일을 생성
 ```yaml
-cat << ZZZ > eksworkshop.yaml
+cat << ZZZ > eksctl-cluster.yaml
 apiVersion: eksctl.io/v1alpha5
 kind: ClusterConfig
 
 metadata:
-  name: eksworkshop-eksctl
+  name: sample-eks-cluster # 원하는 EKS 클러스터명
   region: ${AWS_REGION}
-  version: "1.21"
+  version: "1.23"
 
 availabilityZones: ["${AZS[0]}", "${AZS[1]}", "${AZS[2]}"]
 
@@ -181,7 +181,7 @@ ZZZ
 
 2. eks클러스터 생성
 ```zsh
-eksctl create cluster -f eksworkshop.yaml
+eksctl create cluster -f eksctl-cluster.yaml
 ```
 
 # eks클러스터 테스트
@@ -191,11 +191,11 @@ kubectl get nodes # yaml 파일에 desiredCapacity를 3으로 명시했기 때�
 ```
 2. kubeconfig 파일 변경
 ```bash
-aws eks update-kubeconfig --name eksworkshop-eksctl --region ${AWS_REGION}
+aws eks update-kubeconfig --name sample-eks-cluster # 지정했던 EKS 클러스터명 --region ${AWS_REGION}
 ```
 3. Worker Role 이름을 변수로 저장
 ```bash
-STACK_NAME=$(eksctl get nodegroup --cluster eksworkshop-eksctl -o json | jq -r '.[].StackName')
+STACK_NAME=$(eksctl get nodegroup --cluster sample-eks-cluster # 지정했던 EKS  -o json | jq -r '.[].StackName')
 ROLE_NAME=$(aws cloudformation describe-stack-resources --stack-name $STACK_NAME | jq -r '.StackResources[] | select(.ResourceType=="AWS::IAM::Role") | .PhysicalResourceId')
 echo "export ROLE_NAME=${ROLE_NAME}" | tee -a ~/.bash_profile
 ```
@@ -255,12 +255,12 @@ kubectl ns -
 ```bash
 eksctl utils associate-iam-oidc-provider \
     --region ${AWS_REGION} \
-    --cluster eksworkshop-eksctl \
+    --cluster sample-eks-cluster # 지정한 EKS 클러스터명 \
     --approve
 ```
 2. 클러스터의 OIDC provider URL을 해당 명령어로 확인
 ```bash
-aws eks describe-cluster --name eksworkshop-eksctl --query "cluster.identity.oidc.issuer" --output text
+aws eks describe-cluster --name sample-eks-cluster # 지정한 EKS 클러스터명 --query "cluster.identity.oidc.issuer" --output text
 ```
 3. 명령어 결과 나오는 값은 아래와 같은 형식임을 확인
 ![Screenshot 2023-01-03 at 17 06 51](https://user-images.githubusercontent.com/92728844/210319706-7f4c3c1a-2cc6-41e8-b67f-0211f8c5e14b.png)
@@ -279,7 +279,7 @@ aws iam create-policy \
 6. AWS Load Balancer Controller를 위한 ServiceAccount를 생성
 ```bash
 eksctl create iamserviceaccount \
-    --cluster eksworkshop-eksctl \
+    --cluster sample-eks-cluster # 지정한 EKS 클러스터명 \
     --namespace kube-system \
     --name aws-load-balancer-controller \
     --attach-policy-arn arn:aws:iam::$ACCOUNT_ID:policy/AWSLoadBalancerControllerIAMPolicy \
@@ -300,7 +300,7 @@ wget https://github.com/kubernetes-sigs/aws-load-balancer-controller/releases/do
 spec:
     containers:
     - args:
-        - --cluster-name=eksworkshop-eksctl # 생성한 클러스터 이름을 입력
+        - --cluster-name=sample-eks-cluster # 생성된 클러스터 입력
         - --ingress-class=alb
         image: amazon/aws-alb-ingress-controller:v2.4.4
 ```
