@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inflate-frontend
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      app: inflate-frontend
+  template:
+    metadata:
+      labels:
+        app: inflate-frontend
+    spec:
+      terminationGracePeriodSeconds: 0
+      containers:
+        - name: inflate
+          image: public.ecr.aws/eks-distro/kubernetes/pause:3.7
+          resources:
+            requests:
+              cpu: 1
+      tolerations:
+      - key: "frontend-workload"
+        operator: "Equal"
+        effect: "NoSchedule"

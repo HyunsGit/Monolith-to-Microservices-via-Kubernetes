@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inflate-backend
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      app: inflate-backend
+  template:
+    metadata:
+      labels:
+        app: inflate-backend
+    spec:
+      terminationGracePeriodSeconds: 0
+      containers:
+        - name: inflate
+          image: public.ecr.aws/eks-distro/kubernetes/pause:3.7
+          resources:
+            requests:
+              cpu: 1
+      tolerations:
+      - key: "backend-workload"
+        operator: "Equal"
+        effect: "NoSchedule"
