@@ -1,0 +1,29 @@
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: carflix-cluster
+  region: ap-northeast-2
+  version: "1.23"
+  tags:
+    karpenter.sh/discovery: carflix-cluster
+
+vpc:
+  id: "vpc-081adb332cad04460"
+  subnets:
+    public:
+      ap-northeast-2a:
+        id: "subnet-0b985648f0ec4de89"
+      ap-northeast-2c:
+        id: "subnet-0118a380a0bb18c5e"
+
+managedNodeGroups:
+- name: carflix-nodegroup
+  desiredCapacity: 2
+  minSize: 1
+  maxSize: 10
+  instanceType: c5a.large
+  ssh:
+    enableSsm: true
+iam:
+  withOIDC: true
