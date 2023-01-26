@@ -678,6 +678,7 @@ kubectl get ingress -n backend
 # EKS에 Karpenter 설치해보기
 reference:
 https://www.eksworkshop.com/beginner/085_scaling_karpenter/setup_the_environment
+
 https://karpenter.sh/v0.21.1/getting-started/getting-started-with-eksctl
 
 
