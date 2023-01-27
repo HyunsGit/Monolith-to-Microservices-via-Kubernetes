@@ -1,7 +1,7 @@
 <H1># Monolith-to-Microservices(모놀리스 환경에서 MSA환경으로의 전환)</H1>
 Migrating NCP Monolith Application to AWS EKS(NCP에서 사용하던 Monolith 애플리케이션을 AWS EKS로 마이그레이션)
 
-Underlying Infrastructure(AWS에서 사용 할 인프라)
+Underlying Infrastructure in AWS(AWS에서 사용 할 인프라)
 ---------------------------------------------
 ![monolith to msa](https://user-images.githubusercontent.com/92728844/209612798-5c9ec304-6bea-4d74-96ca-b8e508afd5e7.jpg)
 ---------------------------------------------
