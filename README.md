@@ -229,8 +229,8 @@ ROLE_NAME=$(aws cloudformation describe-stack-resources --stack-name $STACK_NAME
 echo "export ROLE_NAME=${ROLE_NAME}" | tee -a ~/.bash_profile
 ```
 
-# 쿠버네티스 클러스터의 작업공간 분리(Create frontend namespace)
-1. kubernetes frontend workload로 사용 할 namespace 생성
+# 쿠버네티스 클러스터의 작업공간 분리(Create multiple namespace for different workloads)
+1. kubernetes frontend workload로 사용 할 namespace 생성(Create frontend namespace)
 ```bash
 kubectl create ns frontend
 ```
