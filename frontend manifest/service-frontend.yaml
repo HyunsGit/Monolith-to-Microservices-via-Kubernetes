@@ -1,13 +1,13 @@
-apiVersion: v1
-kind: Service
+apiVersion: v1                              
+kind: Service                         # Type of api resource
 metadata:
-  name: carflix-frontend-service
-  namespace: frontend
+  name: example-frontend-service      # Name of the service
+  namespace: frontend                 # Namespace in which the service will be created
 spec:
   selector:
-    app: carflix-frontend
-  type: ClusterIP
+    app: example-frontend             # Tags which service will look for in pods
+  type: ClusterIP                     # Type of the service(ClusterIP, NodePort, LoadBalancer)
   ports:
-   -  protocol: TCP
-      port: 443
-      targetPort: 3000
+   -  protocol: TCP                   # Network type
+      port: 443                       # Port which service is listening externally(Ingress)
+      targetPort: 3000                # Port which service is listening internally(Pods)
