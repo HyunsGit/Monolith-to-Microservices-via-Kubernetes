@@ -1,12 +1,12 @@
-apiVersion: networking.k8s.io/v1
-kind: Ingress
+apiVersion: networking.k8s.io/v1                          # apiVersion may vary depending on your eks cluster version
+kind: Ingress                                             # Kubernetes Api resource
 metadata:
-  name: frontend-example-ingress
-  namespace: frontend
+  name: frontend-example-ingress                          # Name of the ingress
+  namespace: frontend                                     # Location to deploy ingress
   annotations:
     kubernetes.io/ingress.class: alb                      # Load balancer type
     alb.ingress.kubernetes.io/scheme: internet-facing     # Either make it internet-facing or internal
-    alb.ingress.kubernetes.io/target-group-attributes: stickiness.enabled=true,stickiness.lb_cookie.duration_seconds=10800
+    alb.ingress.kubernetes.io/target-group-attributes: stickiness.enabled=true,stickiness.lb_cookie.duration_seconds=10800    # Target group attributes
     alb.ingress.kubernetes.io/target-type: ip             # Target by pod ip or instance ip
     alb.ingress.kubernetes.io/group.name: example-ingress # To group multiple ingresses to use one application load balancer
     alb.ingress.kubernetes.io/group.order: '10'           # State priority level, lower the number higher priority
@@ -16,13 +16,13 @@ metadata:
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'  # Allow port 80, 443
 spec:
   rules:
-  - host: www.example.com     
+  - host: www.example.com                         # Domain name
     http:
       paths:
         - pathType: Prefix
           path: /
           backend:
             service: 
-              name: example-frontend-service
+              name: example-frontend-service      # Service name
               port: 
-                number: 443
+                number: 443                       # Listener port
