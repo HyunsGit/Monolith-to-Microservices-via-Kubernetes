@@ -1,25 +1,39 @@
-<H1># Monolith-to-Microservices(모놀리스 환경에서 MSA환경으로의 전환)</H1>
-Migrating NCP Monolith Application to AWS EKS(NCP에서 사용하던 Monolith 애플리케이션을 AWS EKS로 마이그레이션)
+<H1>모놀리스 환경에서 MSA환경으로의 전환
 
-Underlying Infrastructure in AWS(AWS에서 사용 할 인프라)
+(Migrating from Monolith-to-Microservices)</H1>
+NCP에서 사용하던 Monolith 애플리케이션을 AWS EKS로 마이그레이션(Migrating Monolith Application to AWS EKS)
+
+```json
+가이드를 보고 시작하기 전 꼭 읽어주세요!(Read the paragraph below before proceeding through this guide!)
+
+
+가이드는 참고용입니다, 해당 가이드에서는 제가 테스트한 환경에 마춰 설정값들이 들어갔으며 각자의 환경에 맞게 설정값 변경 후 사용하시면 됩니다. 
+ex) Kubernetes deployment에 image는 제가 private한 ecr리포에 들어가있는 image uri를 쓴것처럼 각자의 환경에 맞는 image uri를 사용하시면 됩니다.
+
+(The guide itself is created just to get an idea of how a kubernetes cluster works.
+Do not copy and paste everything since most of the values inside the Kubernetes yaml files are valid for my environment.
+ex) Inside a Kubernetes deployment there is a image uri from my private ecr repository, 
+which you should change as your image uri from your private ecr repository.)
+```
+AWS에서 사용 할 인프라(Underlying Infrastructure in AWS)
 ---------------------------------------------
 ![monolith to msa](https://user-images.githubusercontent.com/92728844/209612798-5c9ec304-6bea-4d74-96ca-b8e508afd5e7.jpg)
 ---------------------------------------------
-# EKS클러스터 관리에 용이한 워크스페이스 생성
-1. AWS Console로 접근 후 Cloud9 서비스 선택
-2. Create Environment 선택
-3. Cloud9 환경의 이름 지정(인스턴스명은 자유)
-4. Environment type은 'New EC2 instance'로 지정
-5. 인스턴스 타입은 t3.micro 또는 t3.small로 지정 및 Create Environment 선택 후 Cloud9 환경 빌드
-6. Platform은 Amazon Linux 2에 Timeout은 30minutes로 지정
-7. Connection은 SSM이 아닌 SSH로 변경
-8. VPC setting은 사전에 생성한 VPC 또는 Default VPC 사용
-9. Create 클릭
-10. Open 하이퍼링크 클릭
+# EKS클러스터 관리에 용이한 워크스페이스 생성(Creating workspace for EKS)
+1. AWS Console로 접근 후 Cloud9 서비스 선택(Select Cloud9 from AWS Console)
+2. Create Environment 선택(Select create environment)
+3. Cloud9 환경의 이름 지정[인스턴스명은 자유](Choose the name of your choice for your C9 environment)
+4. Environment type은 'New EC2 instance'로 지정(For environment type, choose New EC2 instance)
+5. 인스턴스 타입은 t3.micro 또는 t3.small로 지정 및 Create Environment 선택 후 Cloud9 환경 빌드(Choose between t3.micro or small and hit Create Environment)
+6. Platform은 Amazon Linux 2에 Timeout은 30minutes로 지정(Select Amazon Linux 2 for Platform and set 30minutes for Timeout)
+7. Connection은 SSM이 아닌 SSH로 변경(Change Connection as SSH not SSM)
+8. VPC setting은 사전에 생성한 VPC 또는 Default VPC 사용(Can either use default VPC or custom VPC)
+9. Create 클릭(Select Create)
+10. Open 하이퍼링크 클릭(Click on 'open' hyperlink)
 ![Screenshot 2022-12-27 at 12 46 52](https://user-images.githubusercontent.com/92728844/209608225-eeacbf2c-919c-4a4c-9024-dacd1b00e90c.jpg)
-11. 아래와 같은 Cloud9 환경이 열리는 것을 확인
+11. 아래와 같은 Cloud9 환경이 열리는 것을 확인(Check if C9 environment opens as the image below)
 ![Screenshot 2022-12-27 at 12 45 50](https://user-images.githubusercontent.com/92728844/209607888-fb783a07-c8e2-479b-ae00-9eeb6fb3a543.png)
-12. Cloud9에 추가 프로그램 설치를 위해 EBS볼륨 용량 증설
+12. Cloud9에 추가 프로그램 설치를 위해 EBS볼륨 용량 증설(Increasing size of EBS volume to install extra add-ons in Cloud9)
 ```bash
 pip3 install --user --upgrade boto3
 export instance_id=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
@@ -51,31 +65,31 @@ if [ $? -eq 0 ]; then
     sudo reboot
 fi
 ```
-# Cloud9에 쿠버네티스 툴 설치
-kubectl 설치
+# Cloud9에 쿠버네티스 툴 설치(Installing Kubernetes related tools)
+kubectl 설치(Install kubectl)
 ```bash
 sudo curl --silent --location -o /usr/local/bin/kubectl \
    https://s3.us-west-2.amazonaws.com/amazon-eks/1.21.5/2022-01-21/bin/linux/amd64/kubectl
 
 sudo chmod +x /usr/local/bin/kubectl
 ```
-awscli 업데이트
+awscli 업데이트(Update awscli from version 1 to version 2)
 ```bash
 curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
 unzip awscliv2.zip
 sudo ./aws/install
 ```
-jq, envsubst, bash-completion 설치
+jq, envsubst, bash-completion 설치(Install jq, envsubst and bash-completion)
 ```bash
 sudo yum -y install jq gettext bash-completion moreutils
 ```
-yq 설치
+yq 설치(Install yq)
 ```bash
 echo 'yq() {
   docker run --rm -i -v "${PWD}":/workdir mikefarah/yq "$@"
 }' | tee -a ~/.bashrc && source ~/.bashrc
 ```
-설치한 바이너리의 경로 및 실행 가능여부 확인
+설치한 바이너리의 경로 및 실행 가능여부 확인(Checking binary path and validation check)
 ```bash
 for command in kubectl jq envsubst aws
   do  
@@ -83,47 +97,48 @@ for command in kubectl jq envsubst aws
   done
 ```
 
-AWS 로드밸런서 버전 지정
+AWS 로드밸런서 버전 지정(Adding loadbalancer's version)
 ```bash
 echo 'export LBC_VERSION="v2.4.1"' >>  ~/.bash_profile
 echo 'export LBC_CHART_VERSION="1.4.1"' >>  ~/.bash_profile
 .  ~/.bash_profile
 ```
 
-# 워크스페이스를 위한 IAM role(역할) 생성
-1. Create role 선택
+# 워크스페이스를 위한 IAM role(역할) 생성(Creating IAM role for C9 environment)
+1. Create role 선택(Select create role)
 ![Screenshot 2022-12-27 at 15 15 47](https://user-images.githubusercontent.com/92728844/209620366-b695430d-9e5f-4265-b617-aa9fc4e39070.png)
-2. AWS Service -> EC2 선택
+2. AWS Service -> EC2 선택(Select AWS Service then EC2)
 ![Screenshot 2022-12-27 at 15 16 54](https://user-images.githubusercontent.com/92728844/209620508-77e28687-1fb7-451a-a823-b45bc8883125.png)
-3. Add Permissions에서 AdministratorAccess 선택
+3. Add Permissions에서 AdministratorAccess 선택(Select Add Permission and add AdministratorAccess)
 ![Screenshot 2022-12-27 at 15 20 03](https://user-images.githubusercontent.com/92728844/209620887-78ce1973-2705-4fd1-8e86-f6ccc2037a87.png)
 4. Role 이름 지정 후 'AdministratorAccess' policy가 적용되어 있는지 확인
+(Choose role name and check if the role has AdministratorAccess in policy)
 ![Screenshot 2022-12-27 at 15 22 04](https://user-images.githubusercontent.com/92728844/209621181-2d574c39-3f90-4646-adc0-7878a2c6fdf9.jpg)
 
-# 워크스페이스에 IAM role(역할) 추가
-1. 워크스페이스 인스턴스 선택 후 Actions -> Security -> Modify IAM role
+# 워크스페이스에 IAM role(역할) 추가(Adding IAM role to C9 instance)
+1. 워크스페이스 인스턴스 선택 후 Actions -> Security -> Modify IAM role(Select C9 instance -> Actions -> Security -> Modify IAM role)
 ![Screenshot 2022-12-27 at 15 25 19](https://user-images.githubusercontent.com/92728844/209621517-b840bf7c-dbec-41ab-925c-b9a6671a623c.png)
-2. 생성한 IAM role 선택 후 Update IAM Role 
+2. 생성한 IAM role 선택 후 Update IAM Role(Select the IAM role you created then update IAM role)
 ![Screenshot 2022-12-27 at 15 27 18](https://user-images.githubusercontent.com/92728844/209621736-8e1491db-8db5-434c-ae9c-dc3bc7bb5068.png)
 
 
-# 워크스페이스에 대한 IAM 설정값 변경
-1. AWS가 관리하는 일시으로 부여하는 credential 삭제
+# 워크스페이스에 대한 IAM 설정값 변경(Changing IAM setting in C9)
+1. AWS가 관리하는 일시으로 부여하는 credential 삭제(Remove temporary credentials)
 ```bash
 aws cloud9 update-environment  --environment-id $C9_PID --managed-credentials-action DISABLE
 rm -vf ${HOME}/.aws/credentials
 ```
-2. 계정ID, 리전, 가용영역을 환경변수로 저장
+2. 계정ID, 리전, 가용영역을 환경변수로 저장(Save acccount id, region and az as environment variables)
 ```bash
 export ACCOUNT_ID=$(aws sts get-caller-identity --output text --query Account)
 export AWS_REGION=$(curl -s 169.254.169.254/latest/dynamic/instance-identity/document | jq -r '.region')
 export AZS=($(aws ec2 describe-availability-zones --query 'AvailabilityZones[].ZoneName' --output text --region $AWS_REGION))
 ```
-3. 리전이 제대로 설정되어있는지 확인
+3. 리전이 제대로 설정되어있는지 확인(Check if region is set as environment variable)
 ```bash
 test -n "$AWS_REGION" && echo AWS_REGION is "$AWS_REGION" || echo AWS_REGION is not set
 ```
-4. bash_profile에 해당 변수들 저장
+4. bash_profile에 해당 변수들 저장(Save variables in bash_profile)
 ```bash
 echo "export ACCOUNT_ID=${ACCOUNT_ID}" | tee -a ~/.bash_profile
 echo "export AWS_REGION=${AWS_REGION}" | tee -a ~/.bash_profile
@@ -131,98 +146,112 @@ echo "export AZS=(${AZS[@]})" | tee -a ~/.bash_profile
 aws configure set default.region ${AWS_REGION}
 aws configure get default.region
 ```
-5. IAM role(역할)이 유효한지 확인
+5. IAM role(역할)이 유효한지 확인(Validation check for IAM role)
 ```bash
-aws sts get-caller-identity --query Arn | grep sample-role # ec2에 추가한 iam role 이름 -q && echo "IAM role valid" || echo "IAM role NOT valid"
+aws sts get-caller-identity --query Arn | grep sample-role # ec2에 추가한 iam role 이름(iam role name) && echo "IAM role valid" || echo "IAM role NOT valid"
 ```
 ```json
 만약 IAM role NOT valid가 뜬다면 '워크스페이스를 위한 IAM role(역할) 생성' 섹션으로 돌아가서 해당 단계부터 다시 진행
+If command returns IAM role NOT valid go back to 'Creating IAM role for C9 environment' and redo the following steps
 ```
-# eksctl을 사용해 eks클러스터 생성을 위한 바이너리 설치
-1. eksctl 바이너리 설치
+# eksctl을 사용해 eks클러스터 생성을 위한 바이너리 설치(eksctl)
+1. eksctl 바이너리 설치(Install eksctl binaries)
 ```bash
 curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
 
 sudo mv -v /tmp/eksctl /usr/local/bin
 ```
-2. eksctl 비전 확인
+2. eksctl 비전 확인(Check eksctl version)
 ```bash
 eksctl version
 ```
-3. eksctl bash-completion 활성화
+3. eksctl bash-completion 활성화(Enable eksctl bash-completion)
 ```bash
 eksctl completion bash >> ~/.bash_completion
 . /etc/profile.d/bash_completion.sh
 . ~/.bash_completion
 ```
 
-# eksctl을 사용해 eks클러스터 생성
-1. eks클러스터 배포를 위한 yaml파일을 생성
+# eksctl을 사용해 eks클러스터 생성(Create EKS cluster using eksctl)
+1. eks클러스터 배포를 위한 yaml파일을 생성(Create yaml file to deploy eks cluster)
 ```yaml
 cat << ZZZ > eksctl-cluster.yaml
 apiVersion: eksctl.io/v1alpha5
 kind: ClusterConfig
 
 metadata:
-  name: sample-eks-cluster # 원하는 EKS 클러스터명
-  region: ${AWS_REGION}
-  version: "1.23"
+  name: example-cluster     # 클러스터명(cluster name)
+  region: ap-northeast-2    # 리젼(region name)
+  version: "1.23"           # 쿠버네티스 클러스터 비젼(k8s cluster version)
+  tags:                     # 클러스터 생성과 동시에 생성되는 태그들(cluster tags)
+    karpenter.sh/discovery: example-cluster     # Karpenter를 사용하기 위해 필요한 태그)need this tag for Karpenter later
 
-availabilityZones: ["${AZS[0]}", "${AZS[1]}", "${AZS[2]}"]
+vpc:
+  id: "vpc-12345678"        # 클러스터 배치할 VPC id(VPC id for deploying eks cluster)
+  subnets:
+    public:                 # 공인, 비공인 서브넷 지정(For public subnet, leave it public if private, write privatee instead)
+      ap-northeast-2a:      # 가용용역 지정(Choosing availability zone)
+        id: "subnet-12345678"
+      ap-northeast-2c:
+        id: "subnet-87654321"
 
 managedNodeGroups:
-- name: nodegroup
-  desiredCapacity: 3
-  instanceType: t3.medium
+- name: example-nodegroup   # 클러스터 노드그룹 이름(Name of the EKS node group)
+  desiredCapacity: 2        # 원하는 노드 개수
+  minSize: 1                # 최소 구동되어야하는 노드 개수
+  maxSize: 10               # 최대로 구동 가능한 노드 개수
+  instanceType: c5a.large   # 노드의 인스턴스 크기
   ssh:
-    enableSsm: true
+    enableSsm: true         #노드에 ssh 가능 여부(ssh availability for EKS nodes)
+iam:
+  withOIDC: true
 ZZZ
 ```
 
-2. eks클러스터 생성
+2. eks클러스터 생성(Create EKS cluster)
 ```zsh
 eksctl create cluster -f eksctl-cluster.yaml
 ```
 
-# eks클러스터 테스트
-1. kubernetes 노드 확인
+# eks클러스터 테스트(Test EKS cluster)
+1. kubernetes 노드 확인(Check k8s node)
 ```bash
 kubectl get nodes # yaml 파일에 desiredCapacity를 3으로 명시했기 때문에 3개의 node가 있는지 확인
 ```
-2. kubeconfig 파일 변경
+2. kubeconfig 파일 변경(Modify kubeconfig file)
 ```bash
 aws eks update-kubeconfig --name sample-eks-cluster # 지정했던 EKS 클러스터명 --region ${AWS_REGION}
 ```
-3. Worker Role 이름을 변수로 저장
+3. Worker Role 이름을 변수로 저장(Add Worker role name as environment variable)
 ```bash
 STACK_NAME=$(eksctl get nodegroup --cluster sample-eks-cluster # 지정했던 EKS  -o json | jq -r '.[].StackName')
 ROLE_NAME=$(aws cloudformation describe-stack-resources --stack-name $STACK_NAME | jq -r '.StackResources[] | select(.ResourceType=="AWS::IAM::Role") | .PhysicalResourceId')
 echo "export ROLE_NAME=${ROLE_NAME}" | tee -a ~/.bash_profile
 ```
 
-# 쿠버네티스 클러스터의 작업공간 분리
+# 쿠버네티스 클러스터의 작업공간 분리(Create frontend namespace)
 1. kubernetes frontend workload로 사용 할 namespace 생성
 ```bash
 kubectl create ns frontend
 ```
-2. kubernetes backend workload로 사용 할 namespace 생성
+2. kubernetes backend workload로 사용 할 namespace 생성(Create backend namespace)
 ```bash
 kubectl create ns backend
 ```
-3. kubernetes frontend, backend ns 생성됬는지 조회
+3. kubernetes frontend, backend ns 생성됬는지 조회(Check if frontend and backend namespaces are created)
 ```bash
 kubectl get ns --sort-by=.metadata.creationTimestamp | tac
 ```
 ![Screenshot 2022-12-28 at 9 54 26](https://user-images.githubusercontent.com/92728844/209741885-099dfd50-d13f-4a21-9568-8a825d5541e3.jpg)
 
-4. Cloud9 환경에서 frontend 및 backend 디렉터리 생성
+4. Cloud9 환경에서 frontend 및 backend 디렉터리 생성(Create frontend and backend directories)
 ```bash
 mkdir frontend
 mkdir backend
 ```
 
-# namespace관련 추가적인 툴 설치
-1. krew 설치(cloud9 환경이 아닐 시 'git --version'을 통해 git이 설치되어있는지 확인)
+# namespace관련 추가적인 툴 설치(Install add-ons for faster transition between namespaces)
+1. krew 설치(cloud9 환경이 아닐 시 'git --version'을 통해 git이 설치되어있는지 확인)(Install krew)
 ```bash
 (
   set -x; cd "$(mktemp -d)" &&
@@ -234,79 +263,80 @@ mkdir backend
   ./"${KREW}" install krew
 )
 ```
-2. krew 디렉터리를 환경변수에 저장
+2. krew 디렉터리를 환경변수에 저장(Save krew directory as environment variable)
 ```bash
 export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"
 ```
-3. krew의 ns기능 설치
+3. krew의 ns기능 설치(Install ns via krew)
 ```bash
 kubectl krew install ns
 ```
 ![Screenshot 2022-12-28 at 10 11 52](https://user-images.githubusercontent.com/92728844/209742671-b829191f-3d3d-4d88-bc2a-507d912ddc89.png)
 
-4. ns사용방법(ns 앞에 작업하고 싶은 namespace명을 명시하고 ns 앞에 -를 붙여서 이전 namespace로 이동)
+4. ns사용방법(ns 앞에 작업하고 싶은 namespace명을 명시하고 ns 앞에 -를 붙여서 이전 namespace로 이동)(How to use ns)
 ```bash
 kubectl ns frontend
 kubectl ns -
 ```
 ![Screenshot 2022-12-28 at 10 28 52](https://user-images.githubusercontent.com/92728844/209743225-bd9b7b30-c881-4cc4-9bff-030929aa5d94.png)
-# Ingress를 통한 AWS Load balancer controller 만들기
-1. AWS Load Balancer 컨트롤러를 배포하기 전, 클러스터에 대한 IAM OIDC(OpenID Connect) identity Provider 생성
+# Ingress를 통한 AWS Load balancer controller 만들기(Creating AWS load balancer controller via Ingress)
+1. AWS Load Balancer 컨트롤러를 배포하기 전, 클러스터에 대한 IAM OIDC(OpenID Connect) identity Provider 생성(Creating IAM OIDC)
 ```bash
 eksctl utils associate-iam-oidc-provider \
     --region ${AWS_REGION} \
-    --cluster sample-eks-cluster # 지정한 EKS 클러스터명 \
+    --cluster sample-eks-cluster # 지정한 EKS 클러스터명(EKS cluster name) \
     --approve
 ```
-2. 클러스터의 OIDC provider URL을 해당 명령어로 확인
+2. 클러스터의 OIDC provider URL을 해당 명령어로 확인(Check OIDC provider url)
 ```bash
-aws eks describe-cluster --name sample-eks-cluster # 지정한 EKS 클러스터명 --query "cluster.identity.oidc.issuer" --output text
+aws eks describe-cluster --name sample-eks-cluster # 지정한 EKS 클러스터명(EKS cluster name) --query "cluster.identity.oidc.issuer" --output text
 ```
-3. 명령어 결과 나오는 값은 아래와 같은 형식임을 확인
+3. 명령어 결과 나오는 값은 아래와 같은 형식임을 확인(URL should look like the image below)
 ![Screenshot 2023-01-03 at 17 06 51](https://user-images.githubusercontent.com/92728844/210319706-7f4c3c1a-2cc6-41e8-b67f-0211f8c5e14b.png)
-4. 위의 결과 값에서 /id/ 뒤에 있는 값을 복사한 후, 아래의 명령어를 실행
+4. 위의 결과 값에서 /id/ 뒤에 있는 값을 복사한 후, 아래의 명령어를 실행(Copy everything after /id/ and use the command below shown in the image)
 ![Screenshot 2023-01-03 at 17 11 39](https://user-images.githubusercontent.com/92728844/210320137-24f3060e-2902-463f-91ba-47a9f157a564.png)
 ```json
-결과 값이 출력되면 IAM OIDC identity provider가 클러스터에 생성이 된 상태이며, 아무 값도 나타나지 않으면 생성 작업을 수행
+결과 값이 출력되면 IAM OIDC identity provider가 클러스터에 생성이 되어있는 상태이며, 아무 값도 나타나지 않으면 생성 작업을 수행
 ```
-5. AWS Load Balancer Controller에 부여할 IAM Policy를 생성하는 작업을 수행
+5. AWS Load Balancer Controller에 부여할 IAM Policy를 생성하는 작업을 수행(Create IAM policy for load balancer controller)
 ```bash
 curl -o iam-policy.json https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/v2.4.4/docs/install/iam_policy.json
 aws iam create-policy \
     --policy-name AWSLoadBalancerControllerIAMPolicy \
     --policy-document file://iam-policy.json
 ```
-6. AWS Load Balancer Controller를 위한 ServiceAccount를 생성
+6. AWS Load Balancer Controller를 위한 ServiceAccount를 생성(Create ServiceAccount for load balancer controller)
 ```bash
 eksctl create iamserviceaccount \
-    --cluster sample-eks-cluster # 지정한 EKS 클러스터명 \
+    --cluster sample-eks-cluster # 지정한 EKS 클러스터명(EKS cluster name) \
     --namespace kube-system \
     --name aws-load-balancer-controller \
     --attach-policy-arn arn:aws:iam::$ACCOUNT_ID:policy/AWSLoadBalancerControllerIAMPolicy \
     --override-existing-serviceaccounts \
     --approve
 ```
-# 클러스터에 컨트롤러 추가하기
-1. AWS Load Balancer controller를 클러스터에 추가하는 작업 수행
+# 클러스터에 컨트롤러 추가하기(Add controller to EKS cluster)
+1. AWS Load Balancer controller를 클러스터에 추가하는 작업 수행(Add load balancer controller to EKS cluster)
 ```bash
 kubectl apply --validate=false -f https://github.com/jetstack/cert-manager/releases/download/v1.5.4/cert-manager.yaml
 ```
-2. Load balancer controller yaml 파일을 다운로드
+2. Load balancer controller yaml 파일을 다운로드(Download yaml file for load balancer controller)
 ```bash
 wget https://github.com/kubernetes-sigs/aws-load-balancer-controller/releases/download/v2.4.4/v2_4_4_full.yaml
 ```
-3. yaml 파일에서 클러스터의 cluster-name을 편집
+3. yaml 파일에서 클러스터의 cluster-name을 편집(edit 'cluster-name' section from the cluster yaml file)
 ```yaml
 spec:
     containers:
     - args:
-        - --cluster-name=sample-eks-cluster # 생성된 클러스터 입력
+        - --cluster-name=sample-eks-cluster # 생성된 클러스터 입력(eks cluster name)
         - --ingress-class=alb
         image: amazon/aws-alb-ingress-controller:v2.4.4
 ```
 ![Screenshot 2023-01-03 at 17 24 08](https://user-images.githubusercontent.com/92728844/210321646-0cd05c2e-a45d-4bab-ad95-ba2e06ad5d8c.png)
 
 4. yaml 파일에서 ServiceAccount yaml spec을 삭제. AWS Load Balancer Controller를 위한 ServiceAccount를 이미 생성했기 때문에 아래 내용을 삭제 후 yaml 파일 저장
+(We've created 'ServiceAccount' section previously, so remove the config shown below)
 ```yaml
 ---
 apiVersion: v1
@@ -318,25 +348,25 @@ metadata:
   name: aws-load-balancer-controller
   namespace: kube-system
 ```
-5. AWS Load Balancer controller 파일을 배포
+5. AWS load balancer controller 파일을 배포(Apply the load balancer yaml file)
 ```bash
 kubectl apply -f v2_4_4_full.yaml
 ```
-6. 배포가 성공적으로 되고 컨트롤러가 실행되는지 아래의 명령어를 통해 확인. 결과 값이 도출되면 정상!
+6. 배포가 성공적으로 되고 컨트롤러가 실행되는지 아래의 명령어를 통해 확인. 결과 값이 도출되면 정상!(Verify the status of load balancer controller)
 ```bash
 kubectl get deployment -n kube-system aws-load-balancer-controller
 ```
-7. 아래의 명령어를 통해 service account가 생성됨을 확인
+7. 아래의 명령어를 통해 service account가 생성됨을 확인(Verify the status of service account)
 ```bash
 kubectl get sa aws-load-balancer-controller -n kube-system -o yaml
 ```
-8. 속성 값을 파악
+8. 속성 값을 파악(Find aws load balancer pod and save it as environment variable)
 ```bash
 ALBPOD=$(kubectl get pod -n kube-system | egrep -o "aws-load-balancer[a-zA-Z0-9-]+")
 kubectl describe pod -n kube-system ${ALBPOD}
 ```
 
-# frontend-deployment, service 및 ingress 배포하기
+# frontend deployment, service 및 ingress 배포하기(Deploy frontend Deployment, Service and Ingress)
 1. frontend-deployment.yaml 파일 확인 및 frontend-deployment.yaml frontend 디렉터리로 이동
 ```yaml
 cat <<ZZZ> frontend-deployment.yaml
