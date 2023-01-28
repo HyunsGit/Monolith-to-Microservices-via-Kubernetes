@@ -22,7 +22,7 @@ spec:
         app: example-frontend               # Labels which will be applied to the pod
     spec:
       containers:
-      - image: {$account_id.dkr.ecr.ap-northeast-2.amazonaws.com/{$repository_name}:{$image_name}   # Image URI of Image that is located in ECR repo
+      - image: {$account_id.dkr.ecr.ap-northeast-2.amazonaws.com}/{$repository_name}:{$image_name}   # Image URI of Image that is located in ECR repo
         name: example-frontend              # Container name
         ports:
         - containerPort: 3000               # Port that container is currently listening on
