@@ -1,40 +1,40 @@
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: apps/v1                         # apiVersion may vary depending on your eks cluster version
+kind: Deployment                            # Api resource type
 metadata:
-  name: carflix-frontend
+  name: example-frontend-deployment         # Name of the deployment
   labels:
-    app: carflix-frontend
-  namespace: frontend
+    app: example-frontend                   # Labels that are applied to this deployment
+  namespace: frontend                       # Namespace where this deployment will be deployed
 spec:
   replicas: 0
   selector:
     matchLabels:
-      app: carflix-frontend
+      app: example-frontend                 # Labels which a deployment will look for
   strategy:
-    rollingUpdate:
+    rollingUpdate:                          
       maxSurge: 25%
       maxUnavailable: 25%
-    type: RollingUpdate
-  minReadySeconds: 30
+    type: RollingUpdate                     # Deployment option, either replace pods all at once or partially
+  minReadySeconds: 30                       # After the pod becomes ready state, it waits 30 seconds for the pod to be completely functional
   template:
     metadata:
       labels:
-        app: carflix-frontend
+        app: example-frontend               # Labels which will be applied to the pod
     spec:
       containers:
-      - image: 261897769841.dkr.ecr.ap-northeast-2.amazonaws.com/carflix-prod-repository:front.v1
-        name: carflix-frontend
+      - image: {$account_id.dkr.ecr.ap-northeast-2.amazonaws.com/{$repository_name}:{$image_name}   # Image URI of Image that is located in ECR repo
+        name: example-frontend              # Container name
         ports:
-        - containerPort: 3000
-          protocol: TCP
+        - containerPort: 3000               # Port that container is currently listening on
+          protocol: TCP                     # Network type
         resources:
-          requests:
+          requests:                         # Resource that pod will require
             cpu: 100m
             memory: 150Mi
-          limits:
+          limits:                           # Maximum capacity the pod can use
             cpu: 150m
             memory: 200Mi
-      tolerations:
+      tolerations:                          # If certain nodes have taints, toleration enables pods to bypass the taints
       - key: "frontend-workload"
         operator: "Equal"
         effect: "NoSchedule"
