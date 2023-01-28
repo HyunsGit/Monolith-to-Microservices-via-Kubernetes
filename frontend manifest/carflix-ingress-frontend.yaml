@@ -1,28 +1,28 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: carflix-ingress-frontend
+  name: frontend-example-ingress
   namespace: frontend
   annotations:
-    kubernetes.io/ingress.class: alb
-    alb.ingress.kubernetes.io/scheme: internet-facing
+    kubernetes.io/ingress.class: alb                      # Load balancer type
+    alb.ingress.kubernetes.io/scheme: internet-facing     # Either make it internet-facing or internal
     alb.ingress.kubernetes.io/target-group-attributes: stickiness.enabled=true,stickiness.lb_cookie.duration_seconds=10800
-    alb.ingress.kubernetes.io/target-type: ip
-    alb.ingress.kubernetes.io/group.name: carflix-ingress
-    alb.ingress.kubernetes.io/group.order: '10'
-    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:ap-northeast-2:261897769841:certificate/6a575371-f4b9-4880-9070-fbee69458e54
-    alb.ingress.kubernetes.io/ssl-policy: ELBSecurityPolicy-2016-08
-    alb.ingress.kubernetes.io/ssl-redirect: '443'
-    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+    alb.ingress.kubernetes.io/target-type: ip             # Target by pod ip or instance ip
+    alb.ingress.kubernetes.io/group.name: example-ingress # To group multiple ingresses to use one application load balancer
+    alb.ingress.kubernetes.io/group.order: '10'           # State priority level, lower the number higher priority
+    alb.ingress.kubernetes.io/certificate-arn:            # To apply HTTPS for ALB, use the arn of the SSL certification
+    alb.ingress.kubernetes.io/ssl-policy: ELBSecurityPolicy-2016-08           # Load balancer ssl-policy
+    alb.ingress.kubernetes.io/ssl-redirect: '443'                             # Rule that redirects traffics from port 80(HTTP) to 443(HTTPS)
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'  # Allow port 80, 443
 spec:
   rules:
-  - host: www.mdscarflix.co.kr
+  - host: www.example.com     
     http:
       paths:
         - pathType: Prefix
           path: /
           backend:
             service: 
-              name: carflix-frontend-service
+              name: example-frontend-service
               port: 
                 number: 443
