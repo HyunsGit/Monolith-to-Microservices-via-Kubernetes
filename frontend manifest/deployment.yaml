@@ -6,7 +6,7 @@ metadata:
     app: example-frontend                   # Labels that are applied to this deployment
   namespace: frontend                       # Namespace where this deployment will be deployed
 spec:
-  replicas: 0
+  replicas: 0                               # Number of pods current deployment will create
   selector:
     matchLabels:
       app: example-frontend                 # Labels which a deployment will look for
