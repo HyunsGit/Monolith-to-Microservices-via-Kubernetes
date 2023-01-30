@@ -2,28 +2,28 @@ apiVersion: eksctl.io/v1alpha5
 kind: ClusterConfig
 
 metadata:
-  name: carflix-cluster
-  region: ap-northeast-2
-  version: "1.23"
+  name: example-cluster                           # EKS cluster name
+  region: ap-northeast-2                          # Region where EKS cluster will be deployed
+  version: "1.23"                                 # Cluster version 
   tags:
-    karpenter.sh/discovery: carflix-cluster
+    karpenter.sh/discovery: example-cluster       # Tag for a Karpenter(auto-scaler) to find current EKS cluster 
 
 vpc:
-  id: "vpc-081adb332cad04460"
+  id: "vpc-123abc456def7890"                      # Your VPC ID
   subnets:
-    public:
-      ap-northeast-2a:
-        id: "subnet-0b985648f0ec4de89"
+    public:                                       # Public or Private subnet
+      ap-northeast-2a:                            # Define Availability Zone
+        id: "subnet-123abc456def7890"             # Subnet ID
       ap-northeast-2c:
-        id: "subnet-0118a380a0bb18c5e"
+        id: "subnet-123abc456def7890"
 
 managedNodeGroups:
-- name: carflix-nodegroup
-  desiredCapacity: 2
-  minSize: 1
-  maxSize: 10
-  instanceType: c5a.large
+- name: example-nodegroup                         # Nodegroup name(Could be anything you prefer)
+  desiredCapacity: 2                              # Desired number of EC2 Instance
+  minSize: 1                                      # Minimum number of EC2 Instance
+  maxSize: 10                                     # Maximum number of EC2 Instance
+  instanceType: c5a.large                         # EC2 Instance type
   ssh:
-    enableSsm: true
+    enableSsm: true                               # Allows users to access EKS Node(EC2) via SSH
 iam:
   withOIDC: true
