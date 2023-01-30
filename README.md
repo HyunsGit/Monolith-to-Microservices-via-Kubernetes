@@ -97,7 +97,7 @@ for command in kubectl jq envsubst aws
   done
 ```
 
-AWS 로드밸런서 버전 지정(Adding loadbalancer's version)
+AWS 로드밸런서 버전 지정(Adding load balancer's version)
 ```bash
 echo 'export LBC_VERSION="v2.4.1"' >>  ~/.bash_profile
 echo 'export LBC_CHART_VERSION="1.4.1"' >>  ~/.bash_profile
