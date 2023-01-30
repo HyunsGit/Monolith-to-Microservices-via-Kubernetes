@@ -13,7 +13,7 @@ ex) Kubernetes deployment에 image는 제가 private한 ecr리포에 들어가�
 (The guide itself is created just to get an idea of how a kubernetes cluster works.
 Do not copy and paste everything since most of the values inside the Kubernetes yaml files are valid for my environment.
 ex) Inside a Kubernetes deployment there is a image uri from my private ecr repository, 
-which you should change as your image uri from your private ecr repository.)
+which you should change as your image uri from your private ECR repository.)
 ```
 AWS에서 사용 할 인프라(Underlying Infrastructure in AWS)
 ---------------------------------------------
