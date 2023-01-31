@@ -6,7 +6,7 @@ metadata:
   annotations:
     kubernetes.io/ingress.class: alb                      # Load balancer type
     alb.ingress.kubernetes.io/scheme: internet-facing     # Either make it internet-facing or internal
-    alb.ingress.kubernetes.io/target-group-attributes: stickiness.enabled=true,stickiness.lb_cookie.duration_seconds=10800    # Target group attributes
+    alb.ingress.kubernetes.io/target-group-attributes: stickiness.enabled=true,stickiness.lb_cookie.duration_seconds=10800    # Target group attributes(Not LB attribute but ASG's)
     alb.ingress.kubernetes.io/target-type: ip             # Target by pod ip or instance ip
     alb.ingress.kubernetes.io/group.name: example-ingress # To group multiple ingresses to use one application load balancer
     alb.ingress.kubernetes.io/group.order: '10'           # State priority level, lower the number higher priority
