@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: carflix-backend-service
+  namespace: backend
+spec:
+  selector:
+    app: carflix-backend
+  type: ClusterIP
+  ports:
+   -  protocol: TCP
+      port: 443
+      targetPort: 8081
