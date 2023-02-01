@@ -367,21 +367,21 @@ kubectl describe pod -n kube-system ${ALBPOD}
 ```
 
 # frontend deployment, service 및 ingress 배포하기(Deploy frontend Deployment, Service and Ingress)
-1. frontend-deployment.yaml 파일 확인 및 frontend-deployment.yaml frontend 디렉터리로 이동
+1. frontend-deployment.yaml 파일 확인 및 frontend-deployment.yaml frontend 디렉터리로 이동(Create and check frontend-deployment.yaml file and move the manifest file to frontend directory)
 ```yaml
 cat <<ZZZ> frontend-deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: carflix-frontend
+  name: example-frontend
   labels:
-    app: carflix-frontend
+    app: example-frontend
   namespace: frontend
 spec:
   replicas: 3
   selector:
     matchLabels:
-      app: carflix-frontend
+      app: example-frontend
   strategy:
     rollingUpdate:
       maxSurge: 25%
@@ -391,12 +391,12 @@ spec:
   template:
     metadata:
       labels:
-        app: carflix-frontend
+        app: example-frontend
     spec:
       containers:
       - image: public.ecr.aws/w3v4z9i9/carflix-prod:front.v3
         imagePullPolicy: Always
-        name: carflix-frontend
+        name: example-frontend
         ports:
         - containerPort: 8110
           protocol: TCP
@@ -405,72 +405,80 @@ ZZZ
 ```bash
 mv frontend-deployment.yaml ./frontend/frontend-deployment.yaml
 ```
- 2. frontend-deployment.yaml 파일을 사용해 deployment를 frontend namespace에 생성(pwd로 현재 경로 확인)
+ 2. frontend-deployment.yaml 파일을 사용해 deployment를 frontend namespace에 생성(pwd로 현재 경로 확인)(Create frontend-deployment using frontend-deploy.yaml)
  ```bash
  kubectl apply -f ./frontend/frontend-deployment.yaml
  ```
- 3. frontend namespace에 frontend deployment가 생성됬는지 확인
+ 3. frontend namespace에 frontend deployment가 생성됬는지 확인(Verify that frontend deployment is create in frontend namespace
  ```bash
- kubectl get deploy carflix-frontend -n frontend
+ kubectl get deploy example-frontend -n frontend
  kubectl get po -n frontend
  ```
  ![Screenshot 2023-01-03 at 11 08 10](https://user-images.githubusercontent.com/92728844/210291675-f214fd96-d046-4cba-89cc-b3704f679c68.png)
  
- 4. frontend-service.yaml 파일 확인 및 frontend-service.yaml 파일 frontend 디렉터리로 이동
+ 4. frontend-service.yaml 파일 확인 및 frontend-service.yaml 파일 frontend 디렉터리로 이동(Create and check frontend-service.yaml and move the manifest file to frontend directory)
  ```yaml
 cat <<ZZZ> frontend-service.yaml
-apiVersion: v1
-kind: Service
+apiVersion: v1                              
+kind: Service                         
 metadata:
-  name: carflix-frontend-internal
-  namespace: frontend
+  name: example-frontend-service      
+  namespace: frontend                
 spec:
   selector:
-    app: carflix-frontend
-  type: ClusterIP
+    app: example-frontend             
+  type: ClusterIP                  
   ports:
-   -  name: https
-      protocol: TCP
+   -  protocol: TCP
       port: 443
-      targetPort: 8110
+      targetPort: 3000
 ZZZ
 ```
 ```bash
 mv frontend-service.yaml ./frontend/frontend-service.yaml
 ```
- 5. frontend-service.yaml 파일을 사용해 service를 frontend namespace에 생성
+ 5. frontend-service.yaml 파일을 사용해 service를 frontend namespace에 생성(Create service using frontend-service.yaml in frontend namespace)
  ```bash
  kubectl apply -f ./frontend/frontend-service.yaml
  ```
- 6. frontend namespace에 frontend service가 생성됬는지 확인
+ 6. frontend namespace에 frontend service가 생성됬는지 확인(Verify that frontend-service is created in frontend namespace)
  ```bash
- kubectl get svc carflix-frontend -n frontend
+ kubectl get svc example-frontend -n frontend
 ```
 ![Screenshot 2023-01-03 at 11 13 02](https://user-images.githubusercontent.com/92728844/210292087-24cc8600-d9ad-48cd-97fd-e3406119835f.png)
 
-7. carflix-ingress-frontend 파일 확인 및 carflix-ingress-frontend 파일을 frontend 디렉터리로 이동
+7. example-ingress-frontend 파일 확인 및 example-ingress-frontend 파일을 frontend 디렉터리로 이동(Check example-ingress-frontend.yaml file and move the manifest file to frontend namespace)
 ```yaml
-cat <<ZZZ> carflix-ingress-frontend.yaml
-apiVersion: extensions/v1beta1
-kind: Ingress
+cat <<ZZZ> example-ingress-frontend.yaml
+
+apiVersion: networking.k8s.io/v1                      
+kind: Ingress                                       
 metadata:
-  name: carflix-ingress-frontend
+  name: frontend-example-ingress                       
+  namespace: frontend                          
   annotations:
-    kubernetes.io/ingress.class: alb
-    alb.ingress.kubernetes.io/scheme: internet-facing
-    alb.ingress.kubernetes.io/target-type: ip
-    alb.ingress.kubernetes.io/group.name: carflix-ingress
-  namespace: frontend
+    kubernetes.io/ingress.class: alb                   
+    alb.ingress.kubernetes.io/scheme: internet-facing   
+    alb.ingress.kubernetes.io/target-group-attributes: stickiness.enabled=true,stickiness.lb_cookie.duration_seconds=10800
+    alb.ingress.kubernetes.io/target-type: ip 
+    alb.ingress.kubernetes.io/group.name: example-ingress
+    alb.ingress.kubernetes.io/group.order: '10'       
+    alb.ingress.kubernetes.io/certificate-arn:           
+    alb.ingress.kubernetes.io/ssl-policy: ELBSecurityPolicy-2016-08        
+    alb.ingress.kubernetes.io/ssl-redirect: '443'                        
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
 spec:
   rules:
-  - host: www.mdswebservices.com
+  - host: www.example.com                         # Domain name
     http:
       paths:
         - pathType: Prefix
           path: /
           backend:
-            serviceName: carflix-frontend-internal
-            servicePort: 443
+            service: 
+              name: example-frontend-service      # Service name
+              port: 
+                number: 443                       # Listener port
 ZZZ
 ```
 ```bash
