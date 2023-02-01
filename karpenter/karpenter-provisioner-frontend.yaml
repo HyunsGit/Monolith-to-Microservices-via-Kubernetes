@@ -37,10 +37,10 @@ metadata:
   name: frontend
 spec:
   subnetSelector:
-    karpenter.sh/discovery: carflix-cluster
+    karpenter.sh/discovery: example-cluster
   securityGroupSelector:
-    karpenter.sh/discovery: carflix-cluster
+    karpenter.sh/discovery: example-cluster
   tags:
-    KarpenerProvisionerName: "carflix-cluster-karpenter-provisioner"
-    NodeType: "carflix-cluster"
+    KarpenterProvisionerName: "example-cluster-karpenter-provisioner"
+    NodeType: "example-cluster"
     PodType: "frontend"
