@@ -17,9 +17,9 @@ spec:
         - name: inflate
           image: public.ecr.aws/eks-distro/kubernetes/pause:3.7
           resources:
-            requests:
+            requests:                         # Amount of cpu that pod will be assigned to
               cpu: 1
-      tolerations:
+      tolerations:                            # Toleration that bypasses taints that are applied to nodes
       - key: "frontend-workload"
         operator: "Equal"
         effect: "NoSchedule"
