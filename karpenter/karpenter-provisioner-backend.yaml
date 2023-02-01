@@ -3,30 +3,30 @@ kind: Provisioner
 metadata:
   name: backend
 spec:
-  taints:
+  taints:                                       # Taint that will be applied to a node that is created by Karpenter
     - key: "backend-workload"
       effect: "NoSchedule"
-  requirements:
-    - key: karpenter.k8s.aws/instance-category
-      operator: In
-      values: [t, c]
-    - key: karpenter.sh/capacity-type
+  requirements:                                 # Options that would be applied to Karpenter node
+    - key: karpenter.k8s.aws/instance-category  # EC2 Instance family type that Karpenter node can provision(ex. t2.size, t3.size, c5.size, c6a.size)
+      operator: In                              # Operator 'In' means it allows values that are mention in Values(more options such as NotIn)
+      values: [t, c]                            # Values are the ones Karpenter nodes can use if Operator is 'In'
+    - key: karpenter.sh/capacity-type           # Decide Instance capacity type(ex. on-demand, spot)
       operator: In
       values: [on-demand]
-    - key: karpenter.k8s.aws/instance-size
+    - key: karpenter.k8s.aws/instance-size      # Instance-size range where Karpenter node can provision
       operator: In
       values: [nano, micro, small, medium, large]
-    - key: kubernetes.io/arch
+    - key: kubernetes.io/arch                   # EC2 architecture type(ex. amd64, arm64)
       operator: In
       values: [amd64]
-    - key: topology.kubernetes.io/zone
+    - key: topology.kubernetes.io/zone          # Availability zone where Karpenter node can be provisioned(ex. az.a, az.b, az.c)
       operator: In
       values: [ap-northeast-2a, ap-northeast-2c]
-  limits:
+  limits:                                       # Maximum node that Karpenter node can be provisioned(ex. sum every Karpenter node and it can't go over total of 500 cpu and 500Gi memory)
     resources:
       cpu: 500
       memory: 500Gi
-  ttlSecondsAfterEmpty: 30
+  ttlSecondsAfterEmpty: 30                      # Karpenter node goes down after 30 seconds of workload inactivity
   ttlSecondsUntilExpired: 2592000
   providerRef:
     name: backend
@@ -37,10 +37,10 @@ metadata:
   name: backend
 spec:
   subnetSelector:
-    karpenter.sh/discovery: carflix-cluster
+    karpenter.sh/discovery: example-backend-cluster
   securityGroupSelector:
-    karpenter.sh/discovery: carflix-cluster
+    karpenter.sh/discovery: example-backend-cluster
   tags:
-    KarpenerProvisionerName: "carflix-cluster-karpenter-provisioner"
-    NodeType: "carflix-cluster"
+    KarpenterProvisionerName: "example-cluster-karpenter-provisioner"
+    NodeType: "example-cluster"
     PodType: "backend"
