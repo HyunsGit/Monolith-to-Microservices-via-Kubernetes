@@ -9,11 +9,15 @@ NCP에서 사용하던 Monolith 애플리케이션을 AWS EKS로 마이그레이
 
 가이드는 참고용입니다, 해당 가이드에서는 제가 테스트한 환경에 마춰 설정값들이 들어갔으며 각자의 환경에 맞게 설정값 변경 후 사용하시면 됩니다. 
 ex) Kubernetes deployment에 image는 제가 private한 ecr리포에 들어가있는 image uri를 쓴것처럼 각자의 환경에 맞는 image uri를 사용하시면 됩니다.
+추가적으로 모든 yaml 파일 안에 있는 옵션 값들에는 주석처리가 되어있고 최신 yaml 파일들은 별도의 github 디렉터리에 있으니 
+해당 readme.md에 있는 yaml 파일을 그대로 복붙하지 마세요!)
 
 (The guide itself is created just to get an idea of how a kubernetes cluster works.
 Do not copy and paste everything since most of the values inside the Kubernetes yaml files are valid for my environment.
 ex) Inside a Kubernetes deployment there is a image uri from my private ecr repository, 
-which you should change as your image uri from your private ECR repository.)
+which you should change as your image uri from your private ECR repository.
+Additionally, for every yaml files there are descriptions for options and updated yaml files are in separate 
+github directories so do not copy and paste yaml files that are in readme.md)
 ```
 AWS에서 사용 할 인프라(Underlying Infrastructure in AWS)
 ---------------------------------------------
@@ -128,7 +132,7 @@ echo 'export LBC_CHART_VERSION="1.4.1"' >>  ~/.bash_profile
 aws cloud9 update-environment  --environment-id $C9_PID --managed-credentials-action DISABLE
 rm -vf ${HOME}/.aws/credentials
 ```
-2. 계정ID, 리전, 가용영역을 환경변수로 저장(Save acccount id, region and az as environment variables)
+2. 계정ID, 리전, 가용영역을 환경변수로 저장(Save acccount id, region and availability zone as environment variables)
 ```bash
 export ACCOUNT_ID=$(aws sts get-caller-identity --output text --query Account)
 export AWS_REGION=$(curl -s 169.254.169.254/latest/dynamic/instance-identity/document | jq -r '.region')
@@ -394,7 +398,7 @@ spec:
         app: example-frontend
     spec:
       containers:
-      - image: public.ecr.aws/w3v4z9i9/carflix-prod:front.v3
+      - image: # frontend image uri from ecr
         imagePullPolicy: Always
         name: example-frontend
         ports:
@@ -484,112 +488,139 @@ ZZZ
 ```bash
 mv carflix-ingress-frontend.yaml ./frontend/carflix-ingress-frontend.yaml
 ```
-8. carflix-ingress-frontend.yaml 파일을 사용해 ingress를 frontend namespace에 생성
+8. example-ingress-frontend.yaml 파일을 사용해 ingress를 frontend namespace에 생성(Create Ingress in frontend namespace using example-ingress-frontend.yaml)
 ```bash
 kubectl create -f ./frontend/carflix-ingress-frontend.yaml
 ```
-9. frontend namespace에 frontend ingress가 생성됬는지 확인
+9. frontend namespace에 frontend ingress가 생성됬는지 확인(Verify if frontend ingress is created in frontend namespace)
 ```bash
 kubectl get ingress -n frontend
 ```
 ![Screenshot 2023-01-03 at 17 38 41](https://user-images.githubusercontent.com/92728844/210323654-f67e9de8-8b65-401e-9ba2-1831253da572.jpg)
 
-10. 콘솔로 들어가 AWS ALB가 frontend ingress를 통해 생성됬는지 확인
+10. 콘솔로 들어가 AWS ALB가 frontend ingress를 통해 생성됬는지 확인(Inspect frontend ingress AWS ALB via AWS console)
 ![Screenshot 2023-01-03 at 17 40 43](https://user-images.githubusercontent.com/92728844/210323919-ddea592b-49cd-4f88-848d-7af21fa96d4e.jpg)
-* View/edit rules 눌러서 세부규칙 확인
+* View/edit rules 눌러서 세부규칙 확인(Select view/edit rules to check detailed rules)
 ![Screenshot 2023-01-04 at 9 18 29](https://user-images.githubusercontent.com/92728844/210462534-e4de53c3-3a3d-41a6-adf8-33492baf333a.jpg)
-* 타겟그룹 선택
+* 타겟그룹 선택(Select target group)
 ![Screenshot 2023-01-04 at 9 22 49](https://user-images.githubusercontent.com/92728844/210463026-2f1c36c7-1f52-4797-833e-8b70eb68001f.jpg)
-* frontend pod 3개가 정상적으로 할당되어있는 것을 확인
+* frontend pod 3개가 정상적으로 할당되어있는 것을 확인(Check if 3 frontend pods are healthy)
 ![Screenshot 2023-01-04 at 9 20 51](https://user-images.githubusercontent.com/92728844/210462696-42e5552b-86ff-4139-9d74-a43ae9a86325.png)
-* 로드밸런서 주소로 접속 후 frontend 애플리케이션이 잘 보이는지 확인
+* 로드밸런서 주소로 접속 후 frontend 애플리케이션이 잘 보이는지 확인(Check if frontend application is returning error using load balancer's dns address)
 ![Screenshot 2023-01-04 at 9 26 37](https://user-images.githubusercontent.com/92728844/210463330-92c390c4-a3ee-4bee-9cd9-d3dcc2f578be.jpg)
 ```json
 * 로드밸런서는 80번 포트로 listener가 설정되어 있지만 쿠버네티스 내부 service가 443번 포트로 listener가 설정되어 있기 때문에 통신 오류가 발생
 * 해당 문제를 해결하기 위해 Load balancer의 target group 규칙을 수정(listener 80 -> 443으로 리다이렉트)
 ```
-11. target group 수정
+```json
+* ENG) Currently ALB is listening on port 80 but inside the Kubernetes cluster, the frontend service is listening on 443 
+so there should be an error like above. To troubleshoot this, in this case we'll change the ALB's target group rule 
+therefore it will redirect port 80 traffic to port 443. 
+```
+11. target group 수정(Edit target group)
 ![Screenshot 2023-01-04 at 10 02 20](https://user-images.githubusercontent.com/92728844/210465865-0d19cc38-15d9-4a89-8e2d-558919641503.jpg)
-* Edit 버튼 클릭
+* Edit 버튼 클릭(Edit)
 ![Screenshot 2023-01-04 at 10 05 17(1)](https://user-images.githubusercontent.com/92728844/210466813-50dcb8f3-9719-4f5d-b8cc-7e431ea8b017.jpg)
-* 기존 Default actions 'Return fixed response' 삭제(Remove)
+* 기존 Default actions 'Return fixed response' 삭제(Delete Default actions 'Return fixed response'
 ![Screenshot 2023-01-04 at 10 16 01](https://user-images.githubusercontent.com/92728844/210467085-4a65e632-f5e6-45bc-a783-fefb68c9ddfc.jpg)
-* Default actions에서 Add action -> Redirect 선택
+* Default actions에서 Add action -> Redirect 선택(Select add action from default action then select redirect)
 ![Screenshot 2023-01-04 at 10 19 01](https://user-images.githubusercontent.com/92728844/210467185-8b340450-47f3-4bfa-900e-c191126a99b6.jpg)
-* Protocol은 HTTPS, Port는 443, 그리고 Custom host, path, query 선택 후 Host, Path, Query 값은 기본값 유지. Status code는 301 
+* Protocol은 HTTPS, Port는 443, 그리고 Custom host, path, query 선택 후 Host, Path, Query 값은 기본값 유지. Status code는 301
+* (Select HTTPS for protocol, 443 for port, choose custom host, path, query and leave it as default value and type 301 for status code) 
 ![Screenshot 2023-01-04 at 10 20 28](https://user-images.githubusercontent.com/92728844/210467329-0e1441b0-63d8-42ac-a4e1-6effb6a102da.jpg)
 ```json
 * EC2 -> Load Balancer -> Load Balancer 선택 -> Listener 탭 선택 -> View/Edit rules
 HTTP 80: default action 규칙이 아래와 같이 변경되어 있는지 확인(파란줄 부분 확인)
 ```
+```json
+* ENG) Select EC2 -> Load Balancer -> Select the Load balancer created -> Go to Listener tab -> View/Edit rules
+Verify if default action for HTTP 80 has changed(Check blue line)
+```
 ![Screenshot 2023-01-04 at 10 22 26(1)](https://user-images.githubusercontent.com/92728844/210472664-2f50b470-820b-47b4-93cc-ae5c5f670ef7.jpg)
-# 로드밸런서의 HTTPS 통신을 위해 SSL TLS 인증서 만들기
-1. AWS Console에서 Certificate Manager(ACM) 검색 -> List certificates -> Request 
+# 로드밸런서의 HTTPS 통신을 위해 SSL TLS 인증서 만들기(Create SSL TLS certificate for HTTPS)
+1. AWS Console에서 Certificate Manager(ACM) 검색 -> List certificates -> Request (Search ACM from AWS Console -> List certificates -> Request)
 ![Screenshot 2023-01-04 at 15 26 38](https://user-images.githubusercontent.com/92728844/210496875-30fda187-a5e4-4f1b-a70a-13ffe74ba4d8.jpg)
-2. Request a public certificate -> Next 
+2. Request a public certificate -> Next
 ![Screenshot 2023-01-04 at 15 45 57](https://user-images.githubusercontent.com/92728844/210499183-2740b988-cdef-466b-9103-31e07f021251.jpg)
 3. Fully qualified domain name(FQDN)애 사용할 도메인 주소 입력(여러 개의 DNS주소를 사용할 경우 sub domain에 * 사용 권장) <br />
-Validation Method는 DNS validation 사용
+Validation Method는 DNS validation 사용 <br />
+(Insert the domain that's for use. FYI if using multiple subdomain, would recommend using * and use DNS validation for Validation Method.)
 ![Screenshot 2023-01-04 at 15 48 39](https://user-images.githubusercontent.com/92728844/210499502-3422453e-e01b-4b5b-b9c2-8131979e812c.jpg)
-4. Key algorithm은 RSA 2048 사용 -> Request
+4. Key algorithm은 RSA 2048 사용 -> Request(Use RSA 2048 for Key algorithm -> Request)
 ![Screenshot 2023-01-04 at 15 50 25](https://user-images.githubusercontent.com/92728844/210499643-a20c0467-2273-4641-9dd4-cb0a7c9cf533.jpg)
-5. List certificates -> Certificate ID 선택
+5. List certificates -> Certificate ID 선택(List certificates -> Certificate ID)
 ![Screenshot 2023-01-04 at 15 51 38](https://user-images.githubusercontent.com/92728844/210499890-6217ffa6-1674-4262-b755-0aaeba1a0b15.jpg)
-6. Create records in Route 53 선택
+6. Create records in Route 53 선택(Select create records in Route 53)
 ![Screenshot 2023-01-04 at 15 52 57](https://user-images.githubusercontent.com/92728844/210500018-4122a9f8-e4d6-474e-b612-c2690bc9a307.jpg)
-7. Record 선택 후 Create records
+7. Record 선택 후 Create records(Select the record then create records)
 ![Screenshot 2023-01-04 at 15 53 59](https://user-images.githubusercontent.com/92728844/210500144-0cf7e9d9-6e9b-4868-b86e-188db052aea7.jpg)
-8. AWS Console에서 Route 53 검색 -> Dashboard -> Hosted zone
+8. AWS Console에서 Route 53 검색 -> Dashboard -> Hosted zone(Search Route 53 from AWS Console -> Dashboard -> Hosted zone)
 ![Screenshot 2023-01-04 at 15 56 46](https://user-images.githubusercontent.com/92728844/210500722-02369709-19d4-4a8e-ba0e-6d8d4bf73807.jpg)
-9. 구매한 DNS 주소 선택(외부 DNS 호스팅 업체 사용 시 Route 53으로 DNS 서비스 이전)
+9. 구매한 DNS 주소 선택(외부 DNS 호스팅 업체 사용 시 Route 53으로 DNS 서비스 이전) <br />
+Select the dns address that you've purchased(If using external dns provider rather than Route 53, migrate DNS service to Route 53)
 ![Screenshot 2023-01-04 at 15 59 25](https://user-images.githubusercontent.com/92728844/210500959-99793cd2-932c-439e-93e5-b7be40361564.jpg)
-10. 새로운 CNAME 레코드가 생성된 것을 확인
+10. 새로운 CNAME 레코드가 생성된 것을 확인(Verify if a new CNAME record is created)
 ![Screenshot 2023-01-04 at 16 01 02](https://user-images.githubusercontent.com/92728844/210501263-8856feb0-f3f6-4f30-a391-7d8a2f94b7c2.jpg)
-11. 다시 ACM으로 돌아와서 Certificate의 Status가 Pending에서 Issued로 변경된 것을 확인 
+11. 다시 ACM으로 돌아와서 Certificate의 Status가 Pending에서 Issued로 변경된 것을 확인 <br />
+(Go back to ACM and check if Certicate Status changed from Pending to Issued) 
 ![Screenshot 2023-01-04 at 16 03 35](https://user-images.githubusercontent.com/92728844/210501783-8f1b6e54-1f9f-48ae-bee9-4ff54403a910.jpg)
-12. AWS Console에서 EC2 검색 -> 왼쪽 선택 메뉴에서 Load Balancing -> Load Balancers 선택 -> 생성된 Load Balancer 선택 후 Listener 탭으로 이동 -> Add Listener
+12. AWS Console에서 EC2 검색 -> 왼쪽 선택 메뉴에서 Load Balancing -> Load Balancers 선택 -> 생성된 Load Balancer 선택 후 Listener 탭으로 이동 -> Add Listener <br />
+(Search EC2 from AWS Console -> Choose Load Balancing from sub menu -> Select Load Balancers -> Select the Load Balancer then go to Listener tab -> Add Listener)
+```json
+이미 https listener가 load balancer에 있을 경우 단계 12 ~ 15번 단계 스킵
+(if https listener exists in load balancer, skip step 12 ~15)
+```
 ![Screenshot 2023-01-04 at 16 12 04](https://user-images.githubusercontent.com/92728844/210502636-9d241184-808c-4d41-b42c-b9a0d9ff41c7.jpg)
-13. Protocol은 HTTPS, Port는 443, Default actions는 Forward to 선택 후 Target group은 기존 frontend target group으로 지정
+13. Protocol은 HTTPS, Port는 443, Default actions는 Forward to 선택 후 Target group은 기존 frontend target group으로 지정 <br />
+(Choose HTTPS for Protocol, 443 for Port, select Forward to for Default actions then select existing frontend target group as Target group)
 ![Screenshot 2023-01-04 at 16 15 05](https://user-images.githubusercontent.com/92728844/210503279-d36294e2-e270-4600-8073-9e897af8b9cc.jpg)
-14-1. 엔드유저 세션 유지를 위해 Enable group-level stickiness 체크 후 Stickiness duration은 3 hours로 지정
-14-2. Secure policy는 'ELBSecurityPolicy-2016-08' 선택 후 Default SSL/TLS certificate은 'From ACM' 선택 및 발급 받은 인증서 선택
+14-1. 엔드유저 세션 유지를 위해 Enable group-level stickiness 체크 후 Stickiness duration은 3 hours로 지정 <br />
+(To maintain session for end-users, enable group-level stickiness and set 3 hours for Stickiness duration, duration time can vary depending on your needs) <br />
+14-2. Secure policy는 'ELBSecurityPolicy-2016-08' 선택 후 Default SSL/TLS certificate은 'From ACM' 선택 및 발급 받은 인증서 선택 <br />
+(Select 'ELBSecurityPolicy-2016-08 for Secure policy then select the default SSL/TLS certificate issued from AWS 'From ACM')
 ![Screenshot 2023-01-04 at 16 15 26](https://user-images.githubusercontent.com/92728844/210503300-84f16d65-1e74-4d85-9f3b-79d7b2aff073.jpg)
-15. Add 선택
+15. Add 선택(Select Add)
 ![Screenshot 2023-01-04 at 16 15 39](https://user-images.githubusercontent.com/92728844/210503308-84e2bab1-f024-4a5f-bd67-b32bcb8bd214.jpg)
-16. HTTPS로 리다이렉션하는 규칙을 만들었지만 Security Group에 443 포트가 오픈이 안되어있어 주황색 경고가 떠있는 것을 확인
+16. HTTPS로 리다이렉션하는 규칙을 만들었지만 Security Group에 443 포트가 오픈이 안되어있어 주황색 경고가 떠있는 것을 확인(해당 경고 없을 시 16번 ~ 19번 단계 스킵)  <br />
+(If you don't see orange alert icon, skip step 16 ~ 19)
 ![Screenshot 2023-01-04 at 16 18 45](https://user-images.githubusercontent.com/92728844/210504689-a7e1b3d8-2c7f-4c91-9cb1-75ffec5278df.jpg)
-17. 주황색 경고 아이콘 클릭 후 로드밸런서명과 일치하는 Security Group 선택
+17. 주황색 경고 아이콘 클릭 후 로드밸런서명과 일치하는 Security Group 선택(Select the security group that has orange alert icon)
 ![Screenshot 2023-01-04 at 16 18 55](https://user-images.githubusercontent.com/92728844/210504707-7a7ae502-b244-4f66-ae99-842d4486d287.jpg)
-18. Security Group 선택 후 Edit inbound rules 선택
+18. Security Group 선택 후 Edit inbound rules 선택(Select Security Group and select Edit inbound rules)
 ![Screenshot 2023-01-04 at 16 21 56](https://user-images.githubusercontent.com/92728844/210504723-e6080057-b6ad-4d1f-bafb-938aaa8a0496.jpg)
-19. Add rule -> Type은 HTTPS -> Source는 Custom으로 지정 후 돋보기 칸에 0.0.0.0/0으로 지정 -> Save rules
+19. Add rule -> Type은 HTTPS -> Source는 Custom으로 지정 후 돋보기 칸에 0.0.0.0/0으로 지정 -> Save rules <br />
+(Add rule -> HTTPS as Type -> Set Source as Custom then apply 0.0.0.0/0 0 -> Save rules)
 ![Screenshot 2023-01-04 at 16 22 55](https://user-images.githubusercontent.com/92728844/210504741-aa071703-8110-4ec0-8f7e-de0bcbfe3832.jpg)
-20. AWS Console에서 Route 53 검색 -> Hosted zones -> Create record
+20. AWS Console에서 Route 53 검색 -> Hosted zones -> Create record <br />
+(Search Route 53 from AWS Console -> Hosted zones -> Create record)
 ![Screenshot 2023-01-04 at 16 24 21](https://user-images.githubusercontent.com/92728844/210504754-d002e039-d096-490a-adde-4bed26d9ad53.png)
 21. Record name에 www 또는 원하는 sub domain 지정 -> Record type은 A 레코드 -> Alias 활성화 -> <br />
-Alias to Application and Classica Load Balancer -> ap-northeast-2 -> 알맞는 Load Balancer명 선택 -> Create records
+Alias to Application and Classic Load Balancer -> ap-northeast-2 -> 알맞는 Load Balancer명 선택 -> Create records <br />
+(Use www or subdomain of your choice -> Select A record as Record type -> Activate Alias -> <br />
+Alias to Application and Classic Load Balancer -> ap-northeast-2 -> Select the Load balancer created from EKS -> Create records)
 ![Screenshot 2023-01-04 at 16 26 26](https://user-images.githubusercontent.com/92728844/210504774-79af7813-e938-44ab-a717-e2f678e9a588.jpg)
-22. 생성한 A 레코드가 정상적으로 등록됬는지 확인
+22. 생성한 A 레코드가 정상적으로 등록됬는지 확인(Verify if A record is created)
 ![Screenshot 2023-01-04 at 16 29 22](https://user-images.githubusercontent.com/92728844/210505061-13f037b9-22f0-4d16-a047-4a4d7ef5de49.jpg)
-23. 애플리케이션이 HTTPS로 정상적으로 동작하는지 확인
+23. 애플리케이션이 HTTPS로 정상적으로 동작하는지 확인(Check if HTTPS protocol is working as expected)
 ![Screenshot 2023-01-04 at 16 32 00](https://user-images.githubusercontent.com/92728844/210673442-352fc172-1982-408e-b082-9e97979f6c00.jpg)
 
-# backend-deployment, service 및 ingress 배포하기
-1. backend-deployment.yaml 파일 확인 및 backend-deployment.yaml 파일을 backend 디렉터리로 이동
+# backend-deployment, service 및 ingress 배포하기(Deploy backend-deployment, service and ingress)
+1. backend-deployment.yaml 파일 확인 및 backend-deployment.yaml 파일을 backend 디렉터리로 이동 <br />
+(Inspect backend-deployment.yaml file and move backend-deployment.yaml file to backend directory)
 ```yaml
 cat <<ZZZ> backend-deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: carflix-backend
+  name: example-backend
   labels:
-    app: carflix-backend
+    app: example-backend
   namespace: backend
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: carflix-backend
+      app: example-backend
   strategy:
     rollingUpdate:
       maxSurge: 25%
@@ -599,11 +630,11 @@ spec:
   template:
     metadata:
       labels:
-        app: carflix-backend
+        app: example-backend
     spec:
       containers:
-      - image: public.ecr.aws/w3v4z9i9/carflix-prod:api.3
-        name: carflix-backend
+      - image: # image from ecr
+        name: example-backend
         ports:
         - containerPort: 8082
           protocol: TCP
@@ -612,28 +643,30 @@ ZZZ
 ```bash
 mv backend-deployment.yaml ./backend/backend-deployment.yaml
 ```
- 2. backend-deployment.yaml 파일을 사용해 deployment를 backend namespace에 생성(pwd로 현재 경로 확인)
+ 2. backend-deployment.yaml 파일을 사용해 deployment를 backend namespace에 생성(pwd로 현재 경로 확인) <br />
+ (Create deployment in backend namespace using backned-deploy.yaml file(use pwd to check current path)
  ```bash
  kubectl apply -f ./backend/backend-deployment.yaml
  ```
- 3. backend namespace에 backend deployment가 생성됬는지 확인
+ 3. backend namespace에 backend deployment가 생성됬는지 확인(Verify if backend deployment is created in backend namespace)
  ```bash
- kubectl get deploy carflix-backend -n backend
+ kubectl get deploy example-backend -n backend
  kubectl get po -n backend
  ```
 ![Screenshot 2023-01-05 at 9 34 35](https://user-images.githubusercontent.com/92728844/210675666-9b83f159-93e1-4f58-8169-6b21f0c38469.png)
 
- 4. backend-service.yaml 파일 확인 및 backend-service.yaml 파일을 backend 디렉터리로 이동
+ 4. backend-service.yaml 파일 확인 및 backend-service.yaml 파일을 backend 디렉터리로 이동 <br />
+ (Inspect backen-service.yaml file and move the backend-service.yaml file to backend directory)
  ```yaml
 cat <<ZZZ> backend-service.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: carflix-backend-internal
+  name: example-backend-internal
   namespace: backend
 spec:
   selector:
-    app: carflix-backend
+    app: example-backend
   type: ClusterIP
   ports:
    -  name: https
@@ -645,58 +678,62 @@ ZZZ
 ```bash
 mv backend-service.yaml ./backend/backend-service.yaml
 ```
- 5. backend-service.yaml 파일을 사용해 service를 backend namespace에 생성
+ 5. backend-service.yaml 파일을 사용해 service를 backend namespace에 생성(Create service in backend namespace using backend-service.yaml file)
  ```bash
  kubectl apply -f ./backend/backend-service.yaml
  ```
- 6. backend namespace에 backend service가 생성됬는지 확인
+ 6. backend namespace에 backend service가 생성됬는지 확인(Verify if backend service is created in backend namespace)
  ```bash
- kubectl get svc carflix-backend -n backend
+ kubectl get svc example-backend -n backend
 ```
 ![Screenshot 2023-01-05 at 9 39 08](https://user-images.githubusercontent.com/92728844/210676069-3050aefc-6ca0-4f48-a48f-aedbb7e83fd5.png)
 
-7. carflix-ingress-backend 파일 확인 및 carflix-ingress-backend 파일을 backend 디렉터리로 이동
+7. example-ingress-backend 파일 확인 및 example-ingress-backend 파일을 backend 디렉터리로 이동 <br />
+(Inspect example-ingress-backend file and move the example-ingress-backend file to backend directory)
 ```yaml
-cat <<ZZZ> carflix-ingress-backend.yaml
+cat <<ZZZ> example-ingress-backend.yaml
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
-  name: carflix-ingress-backend
+  name: example-ingress-backend
   annotations:
     kubernetes.io/ingress.class: alb
     alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/target-type: ip
-    alb.ingress.kubernetes.io/group.name: carflix-ingress
+    alb.ingress.kubernetes.io/group.name: example-ingress
   namespace: backend
 spec:
   rules:
-  - host: api.mdswebservices.com
+  - host: api.example.com
     http:
       paths:
         - pathType: Prefix
           path: /
           backend:
-            serviceName: carflix-backend-internal
+            serviceName: example-backend-internal
             servicePort: 443
              
 ZZZ
 ```
 ```bash
-mv carflix-ingress-backend.yaml ./backend/carflix-ingress-backend.yaml
+mv example-ingress-backend.yaml ./backend/example-ingress-backend.yaml
 ```
-8. carflix-ingress-backend.yaml 파일을 사용해 ingress를 backend namespace에 생성
+8. example-ingress-backend.yaml 파일을 사용해 ingress를 backend namespace에 생성 <br />
+(Create ingress in backend namespace using example-ingress-backend.yaml file)
 ```bash
-kubectl create -f ./backend/carflix-ingress-backend.yaml
+kubectl create -f ./backend/example-ingress-backend.yaml
 ```
-9. backend namespace에 backend ingress가 생성됬는지 확인
+9. backend namespace에 backend ingress가 생성됬는지 확인(Verify if backend ingress is created in backend namespace)
 ```bash
 kubectl get ingress -n backend
 ```
 ![Screenshot 2023-01-05 at 9 50 34](https://user-images.githubusercontent.com/92728844/210677210-29b63efc-3a60-406f-b014-20eb2c78b602.png)
-
+```json
+이미 ingress로 생성된 load balancer에 api.example.com 주소로 target group이 잡혀있다면 10~17번 단계 스킵)
+```
 10. 콘솔로 들어가 AWS ALB에 backend ingress가 target group에 추가됬는지 확인
 ![Screenshot 2023-01-05 at 10 17 22](https://user-images.githubusercontent.com/92728844/210680131-c7fbe003-134f-4b7f-9f8e-f3ebe0234607.jpg)
-11. api.mdswebservices DNS 주소 앞으로 backend target group이 생성된 것을 확인
+11. api.example.com DNS 주소 앞으로 backend target group이 생성된 것을 확인
 ![Screenshot 2023-01-05 at 10 20 45](https://user-images.githubusercontent.com/92728844/210680367-40d20424-8e46-4c4f-b4f9-ce3cdac2d9ce.jpg)
 12. 해당 target group을 https 규칙의 target group에 추가
 ![Screenshot 2023-01-05 at 10 23 13](https://user-images.githubusercontent.com/92728844/210681948-57395168-b67f-4837-b962-0d4ca3719c71.jpg)
@@ -710,7 +747,7 @@ kubectl get ingress -n backend
 ![Screenshot 2023-01-05 at 10 45 30](https://user-images.githubusercontent.com/92728844/210682907-a0e56284-5870-4b4b-8a9b-8d83793ae7d6.jpg)
 17. 규칙이 잘 적용됬는지 확인
 ![Screenshot 2023-01-05 at 10 46 40](https://user-images.githubusercontent.com/92728844/210683052-dbab9374-8328-4058-a53f-5eee26c8b353.png)
-# frontend 및 backend 서비스가 통신되서 웹앱이 잘 동작하는지 확인<br />(팝업 뜨면 API 연동 성공!)
+# frontend 및 backend 서비스가 통신되서 웹앱이 잘 동작하는지 확인<br />(팝업 뜨면 API 연동 성공!) 
 <img width="1437" alt="Screenshot 2023-01-06 at 14 11 05" src="https://user-images.githubusercontent.com/92728844/210934557-8443d54c-43b2-4a13-a1e6-c29d0e9190df.png">
 
 # EKS에 Karpenter 설치해보기
