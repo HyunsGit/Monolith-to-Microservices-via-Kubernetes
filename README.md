@@ -731,31 +731,41 @@ kubectl get ingress -n backend
 ```json
 이미 ingress로 생성된 load balancer에 api.example.com 주소로 target group이 잡혀있다면 10~17번 단계 스킵)
 ```
-10. 콘솔로 들어가 AWS ALB에 backend ingress가 target group에 추가됬는지 확인
+```json
+If there is a target group for api.example.com in load balancer that was created by ingress, skip from step 10~17)
+```
+10. 콘솔로 들어가 AWS ALB에 backend ingress가 target group에 추가됬는지 확인 <br />
+(Go to console and check AWS ALB's target group if the backend ingress added backend target group) 
 ![Screenshot 2023-01-05 at 10 17 22](https://user-images.githubusercontent.com/92728844/210680131-c7fbe003-134f-4b7f-9f8e-f3ebe0234607.jpg)
-11. api.example.com DNS 주소 앞으로 backend target group이 생성된 것을 확인
+11. api.example.com DNS 주소 앞으로 backend target group이 생성된 것을 확인 <br />
+(Verify that backend target group is mapped with api.example.com)
 ![Screenshot 2023-01-05 at 10 20 45](https://user-images.githubusercontent.com/92728844/210680367-40d20424-8e46-4c4f-b4f9-ce3cdac2d9ce.jpg)
-12. 해당 target group을 https 규칙의 target group에 추가
+12. Load balancer 리스너에 https 규칙의 target group에 추가 <br />
+(Add target group with https rule for the current load balancer's listener)
 ![Screenshot 2023-01-05 at 10 23 13](https://user-images.githubusercontent.com/92728844/210681948-57395168-b67f-4837-b962-0d4ca3719c71.jpg)
-13. https 규칙에 규칙 추가
+13. https 규칙에 규칙 추가(Add https rule)
 ![Screenshot 2023-01-05 at 10 38 10](https://user-images.githubusercontent.com/92728844/210682341-8ce3d0b4-4463-457f-b875-1a831d04452c.jpg)
-14. frontend target group 규칙 추가
+14. frontend target group 규칙 추가(Add frontend target group)
 ![Screenshot 2023-01-05 at 10 41 51](https://user-images.githubusercontent.com/92728844/210682607-b1769291-08ee-4bc8-93b0-e5f121ae5aa6.jpg)
-15. 규칙 순서 변경 
+15. 규칙 순서 변경(Modify rule orders)
 ![Screenshot 2023-01-05 at 10 43 32](https://user-images.githubusercontent.com/92728844/210682740-5b4a32ce-4fc2-4154-b9f8-c34de772f3d2.jpg)
-16. backend target group 규칙 추가
+16. backend target group 규칙 추가(Add backend target group)
 ![Screenshot 2023-01-05 at 10 45 30](https://user-images.githubusercontent.com/92728844/210682907-a0e56284-5870-4b4b-8a9b-8d83793ae7d6.jpg)
-17. 규칙이 잘 적용됬는지 확인
+17. 규칙이 잘 적용됬는지 확인(Verify if rules are applied properly)
 ![Screenshot 2023-01-05 at 10 46 40](https://user-images.githubusercontent.com/92728844/210683052-dbab9374-8328-4058-a53f-5eee26c8b353.png)
-# frontend 및 backend 서비스가 통신되서 웹앱이 잘 동작하는지 확인<br />(팝업 뜨면 API 연동 성공!) 
+# frontend 및 backend 서비스가 통신되서 웹앱이 잘 동작하는지 확인 <br /> (팝업 뜨면 API 연동 성공!) <br />
+# Verify the connection between frontend and backend service <br /> (If there is a pop-up, connection is good to go!)
 <img width="1437" alt="Screenshot 2023-01-06 at 14 11 05" src="https://user-images.githubusercontent.com/92728844/210934557-8443d54c-43b2-4a13-a1e6-c29d0e9190df.png">
 
-# EKS에 Karpenter 설치해보기
+# EKS에 Karpenter 설치해보기 <br />
+# Install Karpenter on EKS
 reference:
 
 https://www.eksworkshop.com/beginner/085_scaling_karpenter/setup_the_environment
 
 https://karpenter.sh/v0.21.1/getting-started/getting-started-with-eksctl
+
+Karpenter 설정파일일은 Github 첨부 파일 참조(Check my Github for Karpenter manifest files)
 
 
 
