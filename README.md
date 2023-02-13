@@ -767,6 +767,18 @@ https://karpenter.sh/v0.21.1/getting-started/getting-started-with-eksctl
 
 Karpenter 설정파일일은 Github 첨부 파일 참조(Check my Github for Karpenter manifest files)
 
+# Grafana Dashboard에 PromQL문 작성 <br />
+# Using PromQL to create Grafana Dashboard
+
+1. CPU 사용량(CPU Usage) - Prometheus agent
+- sum by (instance) (irate(node_cpu_seconds_total{mode!~"guest.*|idle|iowait", kubernetes_node="$node"}[5m]))
+
+2. 메모리 사용량(Memory Usage) - Prometheus agent
+- (node_memory_MemTotal_bytes{kubernetes_node="$node"}-node_memory_MemAvailable_bytes{kubernetes_node="$node"})/node_memory_MemTotal_bytes{kubernetes_node="$node"}
+
+3. Pod 로그(Pod log) - Loki agent
+- {pod="$pod"}
+
 
 
 
