@@ -769,11 +769,11 @@ https://www.eksworkshop.com/beginner/085_scaling_karpenter/setup_the_environment
 
 https://karpenter.sh/v0.21.1/getting-started/getting-started-with-eksctl
 
-Karpenter 설정파일들은 Github 첨부 파일 참조(Check my Github for Karpenter manifest files) <br />
-Karpenter 설치 이후 아래에 보이는 sample yaml로 karpenter의 autoscaling 기능 테스트 <br />
+- Karpenter 설정파일들은 Github 첨부 파일 참조(Check my Github for Karpenter manifest files) <br />
+- Karpenter 설치 이후 아래에 보이는 sample yaml로 karpenter의 autoscaling 기능 테스트 <br />
 (After installing Karpenter, test your Karpenter with the sample yaml file below) <br />
 1. Karpenter가 노드 개수를 늘리는지 확인 및 replicas 개수 임의로 늘려보기, replicas 개수 늘리는 명령어는 kubectl scale --replicas=<숫자> deployment/<deployment명> <br />
-(Increase the number of replicas and check if Karpenter provisions extra node depending on the workload, command for increasing replicas 'kubectl scale --replicas=<number> deployment/<deployment-name>
+(Increase the number of replicas and check if Karpenter provisions extra node depending on the workload, command for increasing replicas 'kubectl scale --replicas='desired number of replicas' deployment/'your-deployment-name'
 ```yaml
 apiVersion: apps/v1
 kind: Deployment
