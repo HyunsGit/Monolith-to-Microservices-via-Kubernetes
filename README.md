@@ -769,19 +769,25 @@ https://www.eksworkshop.com/beginner/085_scaling_karpenter/setup_the_environment
 
 https://karpenter.sh/v0.21.1/getting-started/getting-started-with-eksctl
 
-Karpenter 설정파일일은 Github 첨부 파일 참조(Check my Github for Karpenter manifest files)
+Karpenter 설정파일들은 Github 첨부 파일 참조(Check my Github for Karpenter manifest files)
 
 # Grafana Dashboard에 PromQL문 작성 <br />
 # Using PromQL to create Grafana Dashboard
 
 1. CPU 사용량(CPU Usage) - Prometheus agent
 - sum by (instance) (irate(node_cpu_seconds_total{mode!~"guest.*|idle|iowait", kubernetes_node="$node"}[5m]))
+<img width="1415" alt="Screenshot 2023-02-13 at 14 11 13" src="https://user-images.githubusercontent.com/92728844/218375850-7fbe0e96-d8f8-4749-8a05-7d608b547122.png">
 
 2. 메모리 사용량(Memory Usage) - Prometheus agent
 - (node_memory_MemTotal_bytes{kubernetes_node="$node"}-node_memory_MemAvailable_bytes{kubernetes_node="$node"})/node_memory_MemTotal_bytes{kubernetes_node="$node"}
+<img width="1415" alt="Screenshot 2023-02-13 at 14 12 16" src="https://user-images.githubusercontent.com/92728844/218375956-17ea2cce-7ab8-4a01-8356-bc70c76af191.png">
+
 
 3. Pod 로그(Pod log) - Loki agent
 - {pod="$pod"}
+<img width="1415" alt="Screenshot 2023-02-13 at 14 13 07" src="https://user-images.githubusercontent.com/92728844/218376045-d17bcd53-d471-4b7d-b4db-7b6c7795a7ff.png">
+
+
 
 
 
