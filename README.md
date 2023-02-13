@@ -21,7 +21,11 @@ github directories so do not copy and paste yaml files that are in readme.md)
 ```
 AWS에서 사용 할 인프라(Underlying Infrastructure in AWS)
 ---------------------------------------------
-![monolith to msa](https://user-images.githubusercontent.com/92728844/209612798-5c9ec304-6bea-4d74-96ca-b8e508afd5e7.jpg)
+![carflix_AWS_Architecture (1)](https://user-images.githubusercontent.com/92728844/218354175-488ea05a-7149-4f6d-b918-371c22310740.svg)
+---------------------------------------------
+Kubernetes 클러스터를 위한 CICD 파이프라인(CICD Pipeline for Kubernetes Cluster)
+---------------------------------------------
+![carflix CICD topology](https://user-images.githubusercontent.com/92728844/218355199-1e70899b-ac67-4e31-88a4-707897a0e2bf.svg)
 ---------------------------------------------
 # EKS클러스터 관리에 용이한 워크스페이스 생성(Creating workspace for EKS)
 1. AWS Console로 접근 후 Cloud9 서비스 선택(Select Cloud9 from AWS Console)
