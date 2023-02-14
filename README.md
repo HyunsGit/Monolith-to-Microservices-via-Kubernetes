@@ -818,7 +818,10 @@ spec:
 - {pod="$pod"}
 <img width="1415" alt="Screenshot 2023-02-13 at 14 13 07" src="https://user-images.githubusercontent.com/92728844/218376045-d17bcd53-d471-4b7d-b4db-7b6c7795a7ff.png">
 
+# 많이 쓰는 쿠버네티스 명령어 <br />
+# Good luck with your journey with Kubernetes!
 
+- https://kubernetes.io/docs/reference/kubectl/cheatsheet/
 
 
 
