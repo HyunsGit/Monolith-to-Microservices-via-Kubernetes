@@ -1,5 +1,5 @@
 apiVersion: networking.k8s.io/v1                          # apiVersion may vary depending on your eks cluster version
-kind: Ingress                                             # Kubernetes Api resource
+kind: Ingress                                             # Kubernetes api resource
 metadata:
   name: frontend-example-ingress                          # Name of the ingress
   namespace: frontend                                     # Location to deploy ingress
